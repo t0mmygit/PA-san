@@ -1,8 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, ActivityType, Embed } = require('discord.js');
-const { token } = require('./config.json');
-const { EmbedBuilder } = require('discord.js');
+require('dotenv').config();
 
 const client = new Client({ 
 	intents: [
@@ -81,4 +80,4 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
-client.login(token);
+client.login(process.env.DISCORD_TOKEN);
