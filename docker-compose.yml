@@ -1,0 +1,21 @@
+services:
+    bot:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: node index.js
+        volumes:
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
+        environment:
+            - NODE_ENV=production
+        restart: unless-stopped
+
+    deploy:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: node deploy-commands.js
+        volumes: 
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
