@@ -4,16 +4,12 @@ const { ActionRowBuilder,
         EmbedBuilder, 
         Events,
         ModalBuilder,
-        SlashCommandBuilder, 
         TextInputBuilder,
         TextInputStyle    
     } = require('discord.js');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('menu'),
     async execute(client, message) {
-        // Embed
         const menuEmbed = new EmbedBuilder()
             .setColor(0x252525)
             .setTitle('Main Menu')
@@ -25,14 +21,13 @@ module.exports = {
                     iconURL: 'https://cdn.discordapp.com/avatars/' + message.author.id + "/" + message.author.avatar + '.png' 
                 });
             
-        // Modal
         const modal = new ModalBuilder()
             .setCustomId('MyModal')
-            .setTitle('My Modal')
+            .setTitle('Sell your Ticket') 
 
         const ticketInput = new TextInputBuilder()
 			.setCustomId('ticketInput')
-			.setLabel('Ticket Quantity')
+			.setLabel('Quantity')
             .setMinLength(1)
             .setMaxLength(3)
 			.setStyle(TextInputStyle.Short)
@@ -50,10 +45,9 @@ module.exports = {
 
 		modal.addComponents(firstActionRow, secondActionRow);
 
-        // Button
         const ticket = new ButtonBuilder()
 			.setCustomId('ticket')
-			.setLabel('Sell Ticket')
+			.setLabel('Submit')
 			.setStyle(ButtonStyle.Primary);
 
 		const cancel = new ButtonBuilder()
@@ -72,34 +66,39 @@ module.exports = {
         const rowProcess = new ActionRowBuilder()
             .addComponents(cancel, confirm);
 
-        // NOTE: Button click will fire an interaction event
        const response = await message.reply({
             embeds: [menuEmbed],
             components: [rowMenu]
         });
 
         const filter = (interaction) => interaction.user.id === message.author.id;
+        const confirmation = await response.awaitMessageComponent({ filter: filter, time: 60_000 });
+
         try {
-            const confirmation = await response.awaitMessageComponent({ filter: filter, time: 60_000 });
 
             if (confirmation.customId === 'ticket') {
                 await confirmation.showModal(modal);
+
                 client.on(Events.InteractionCreate, async interaction => {
                     if (!interaction.isModalSubmit()) return;
+                    
                     if (interaction.customId === 'MyModal') {
                         const ticket = interaction.fields.getTextInputValue('ticketInput');
                         const notes = interaction.fields.getTextInputValue('noteInput');
+                        
                         console.log({ ticket, notes });
+
                         await message.reply({ content: 'Your submission was received successfully!' });
                     } else {
                         await message.reply({ content: `notModal?`});
                     }
                 });
+                
             } else if (confirmation.customId === 'cancel') {
                 await confirmation.update({ content: 'Action cancelled', components: [] });
             }
-        } catch (e) {
-            await message.reply({ content: `${e}` });
+        } catch (error) {
+            console.log(error);
         }
         
     }
