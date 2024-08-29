@@ -5,44 +5,45 @@ require('dotenv').config();
 
 const commands = [];
 // Grab all the command folders from the commands directory you created
-const foldersPath = path.join(__dirname, 'commands');
+// const foldersPath = path.join(__dirname, 'commands/slash');
+const foldersPath = path.join(process.cwd(), 'commands/slash');
 console.log("Fetching Folders Path:", foldersPath)
 
 const commandFolders = fs.readdirSync(foldersPath);
 console.log("Fetching Command Folders:", commandFolders)
 
-var count = 0;
 for (const folder of commandFolders) {
-	// Grab all the command files from the commands directory you created
 	const commandsPath = path.join(foldersPath, folder);
 	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 	
-	count += 1;
-	console.log(count, ". Fetching Command Files:", commandFiles)
-
-	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
 		const command = require(filePath);
 		if ('data' in command && 'execute' in command) {
-			commands.push(command.data.toJSON());
+			console.log(`Processing command: ${file}`);
+			try {
+				commands.push(command.data.toJSON());
+			} catch (error) {
+				console.error(`Error processing command: ${file}: ${error.message}`);
+			}
 		} else {
 			console.log(`[WARNING-DEPLOY] The command at ${filePath} is missing a required "data" or "execute" property.`);
-		}
+		} 
 	}
 }
 
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
+console.log("Deploying Commands...");
+
 // and deploy your commands!
 (async () => {
 	try {
 		console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
-		// The put method is used to fully refresh all commands in the guild with the current set
 		const data = await rest.put(
-			Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID),
+			Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
 			{ body: commands },
 		);
 
