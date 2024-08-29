@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Fetch a message!')
         .addStringOption(option => 
             option.setName('id')
-                .setDescription(`Insert message ID.`)
+                .setDescription(`Insert the message ID.`)
                 .setRequired(true)),
     async execute(interaction) {
         const messageID = interaction.options.getString('id');
