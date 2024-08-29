@@ -5,17 +5,26 @@ services:
             dockerfile: Dockerfile
         command: node index.js
         volumes:
-            - .:/usr/src/app
-            - /usr/src/app/node_modules
+            - .:/user/src/app
+            - /user/src/app/node_modules
         environment:
             - NODE_ENV=production
         restart: unless-stopped
+        develop:
+            watch:
+             - action: sync
+               path: ./index.js
+               target: /user/src/app/index.js
+            #  - action: rebuild
+            #    path: ./index.js
 
     deploy:
         build:
             context: .
             dockerfile: Dockerfile
         command: node deploy-commands.js
-        volumes: 
-            - .:/usr/src/app
-            - /usr/src/app/node_modules
+        develop:
+            watch:
+            - action: sync
+              path: ./commands/slash/
+              target: /user/src/app/commands/slash
