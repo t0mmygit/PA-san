@@ -7,7 +7,6 @@ const sequelize = new Sequelize({
 });
 
 console.log('Authenticating to the database...');
-console.log(process.cwd());
 
 sequelize.authenticate()
     .then(() => {
