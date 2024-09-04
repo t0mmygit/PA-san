@@ -1,15 +1,19 @@
-const { PREFIX } = require('../constant.js');
 const { Events } = require('discord.js');
-const User = require('../models/User');
+const { PREFIX } = require('@/constant.js');
+const { removeOngoingCommand } = require('@/handlers/storageHandler.js');
+const User = require('@models/User');
 
 module.exports = (client) => {
     client.on(Events.MessageCreate, async message => {
-        if (!message.content.startsWith(PREFIX)) return;
+        if (!message.content.startsWith(PREFIX) || message.author.bot) return;
         
+        // Double check if User.findOne returns promise
         const user = await User.findOne({ where: { discordId: message.author.id } });
 
         if (user === null) {
-            await require('../commands/prefix/interface/userVerification').execute(message);
+            await require('@auth/userVerification').execute(message);
+
+            // TODO: Greet and show available command
 
             return;
         }
@@ -24,12 +28,19 @@ module.exports = (client) => {
             return;
         }
 
-        const command = args.shift().toLowerCase();
+        const action = args.shift().toLowerCase();
+        const command = client.prefixCommands.get(action);
+
+        if (!command) {
+            console.log(`Message Error: Command '${action}' not found or does not exist.`);
+            
+            return;
+        }
+
+        await removeOngoingCommand(client, message, action);
 
         try {
-            const action = require(`../commands/prefix/interface/${command}.js`);
-
-            await action.execute(client, message);
+            await command.execute(client, message);
         } catch (error) {
             console.log('Message Error:', error)
         }
