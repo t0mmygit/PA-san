@@ -13,12 +13,14 @@ const client = new Client({
 module.exports.client = client;
 
 client.commands = new Collection();
+client.prefixCommands = new Collection();
 
 console.log('Loading slash commands...')
-require('./handlers/commandHandler')(client);
+require('@handlers/commandHandler')(client);
+require('@handlers/prefixCommandHandler')(client);
 
-require('./events/clientReady')(client);
-require('./events/messageCreate')(client);
-require('./events/interactionCreate')(client);
+require('@events/clientReady')(client);
+require('@events/messageCreate')(client);
+require('@events/interactionCreate')(client);
 
 client.login(process.env.DISCORD_TOKEN);
