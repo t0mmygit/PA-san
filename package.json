@@ -10,6 +10,9 @@
     "eslint": "^9.9.1"
   },
   "_moduleAliases": {
+    "@": ".",
+    "@auth": "commands/auth",
+    "@events": "events",
     "@models": "models",
     "@handlers": "handlers",
     "@services": "services"
