@@ -3,28 +3,29 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+        image: my-discord-app-bot
         command: node index.js
         volumes:
             - .:/user/src/app
             - /user/src/app/node_modules
         environment:
             - NODE_ENV=production
-        restart: unless-stopped
+        restart: on-failure
         develop:
             watch:
              - action: sync
                path: ./index.js
                target: /user/src/app/index.js
-            #  - action: rebuild
-            #    path: ./index.js
+             - action: rebuild
+               path: ./package.json
 
-    deploy:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        command: node deploy-commands.js
-        develop:
-            watch:
-            - action: sync
-              path: ./commands/slash/
-              target: /user/src/app/commands/slash
+    # deploy:
+    #     build:
+    #         context: .
+    #         dockerfile: Dockerfile
+    #     command: node deploy-commands.js
+    #     develop:
+    #         watch:
+    #         - action: sync
+    #           path: ./commands/slash/
+    #           target: /user/src/app/commands/slash
