@@ -1,6 +1,6 @@
 const { ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
-const { COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR } = require('../../../constant');
-const User = require('../../../models/User');
+const { COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR } = require('@/constant.js');
+const User = require('@models/User');
 
 module.exports = {
     async execute(message) {
@@ -42,7 +42,8 @@ module.exports = {
 
         try {
             if (confirmation.customId === 'verify') {
-                const user = await User.create({ discordId: message.author.id });
+                // TODO: UserService Instead
+                const user = await User.create({ discord_id: message.author.id });
 
                 await confirmation.message.edit({ 
                     embeds: [verifiedEmbed],

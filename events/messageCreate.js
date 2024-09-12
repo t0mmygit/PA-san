@@ -7,8 +7,8 @@ module.exports = (client) => {
     client.on(Events.MessageCreate, async message => {
         if (!message.content.startsWith(PREFIX) || message.author.bot) return;
         
-        // Double check if User.findOne returns promise
-        const user = await User.findOne({ where: { discordId: message.author.id } });
+        // TODO: UserService instead
+        const user = await User.findOne({ where: { discord_id: message.author.id } });
 
         if (user === null) {
             await require('@auth/userVerification').execute(message);
