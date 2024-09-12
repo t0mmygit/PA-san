@@ -10,13 +10,15 @@ User.init(
             autoIncrement: true,
             primaryKey: true,
         },
-        discordId: {
+        discord_id: {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
         },
-    }, {
+    },
+    {
         sequelize,
+        underscored: true,
         modelName: 'User',
     },
 );

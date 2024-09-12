@@ -11,11 +11,24 @@ Inventory.init(
             autoIncrement: true,
             type: DataTypes.INTEGER,
         },
+        user_id: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: User,
+                key: 'id',
+            },
+        },
+        is_private: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
         ticket_quantity: {
             type: DataTypes.INTEGER,
         }
-    }, {
+    },
+    {
         sequelize,
+        underscored: true,
         modelName: 'Inventory',
     }
 );
