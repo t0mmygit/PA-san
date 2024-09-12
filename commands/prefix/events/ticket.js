@@ -1,9 +1,10 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 const { PREFIX, COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR, COLLECTOR_MAX, COLLECTOR_TIME } = require("@/constant.js");
 const storage = require('@//storage.js');
+const InventoryService = require('@services/InventoryService');
 
-function isPositiveInteger(message) {
-    const number = Number(message);
+function isIntegerAndPositive(string) {
+    const number = Number(string);
 
     return Number.isInteger(number) && number > 0;
 }
@@ -60,44 +61,48 @@ module.exports = {
         );
 
         collector.on('collect', async (collected) => {
-            if (isPositiveInteger(collected.content)) { 
-                const secondEmbed = EmbedBuilder.from(response.embeds[0])
-                    .setColor(COLOR_SECONDARY)
-                    .setDescription(null)
-                    .setFields(
-                        { name: 'You\'ve inserted the following', value: wrapCodeBlock(collected.content + ' Tickets') }
-                    );
-
-                const secondInteraction = await response.edit({
-                    embeds: [secondEmbed],
-                    components: [row],
-                })  
-
-                const secondFilter = (interaction) => interaction.user.id === message.author.id;
-                const secondResponse = await secondInteraction.awaitMessageComponent({ filter: secondFilter, time: COLLECTOR_TIME }); 
-
-                if (secondResponse.isButton()) {
-                    if (secondResponse.customId === 'save') {
-                        const savedEmbed = EmbedBuilder.from(response.embeds[0])
-                            .setColor(COLOR_SUCCESS);
-
-                        await response.edit({
-                            content: wrapBold('Tickets have been saved.'),
-                            embeds: [savedEmbed],
-                            components: [],
-                        });
-
-                    } else if (secondResponse.customId === 'cancel') {
-                        collector.stop('cancel-by-user');
-                    }
-
-                    if (!collector.ended) collector.stop();
-                    storage.delete(message.author.id);
-                }
-            } else {
+            if (!isIntegerAndPositive(collected.content)) {
                 if (collected.content.startsWith(PREFIX)) return;
 
                 await collected.reply('Please input a valid input!');
+
+                return;         
+            }
+
+            const secondEmbed = EmbedBuilder.from(response.embeds[0])
+                .setColor(COLOR_SECONDARY)
+                .setDescription(null)
+                .setFields(
+                    { name: 'You\'ve inserted the following', value: wrapCodeBlock(collected.content + ' Tickets') }
+                );
+
+            const secondInteraction = await response.edit({
+                embeds: [secondEmbed],
+                components: [row],
+            })  
+
+            const secondFilter = (interaction) => interaction.user.id === message.author.id;
+            const secondResponse = await secondInteraction.awaitMessageComponent({ filter: secondFilter, time: COLLECTOR_TIME }); 
+
+            if (secondResponse.isButton()) {
+                if (secondResponse.customId === 'cancel') collector.stop('cancel-by-user');
+                
+                if (secondResponse.customId === 'save') { 
+                    const savedEmbed = EmbedBuilder.from(response.embeds[0])
+                        .setColor(COLOR_SUCCESS);
+
+                    const inventory = await new InventoryService().createInventory({
+                        ticket_quantity: collected.content,
+                    }, message.author.id);
+
+                    await response.edit({
+                        content: wrapBold('Record have been saved.'),
+                        embeds: [savedEmbed],
+                        components: [],
+                    });
+                }
+
+                if (!collector.ended) collector.stop();
             }
         });
 
@@ -122,7 +127,12 @@ module.exports = {
                 })
             }
 
-            await storage.delete(message.author.id);
+            const recordDeleteStatus = storage.delete(message.author.id);
+            
+            // Debugging Purposes
+            if (!recordDeleteStatus) {
+                console.error(`Failed to delete record from storage. Record deleted or does not exist? (Nessage ID: ${message.id})`);
+            } 
         });
     }
 }
