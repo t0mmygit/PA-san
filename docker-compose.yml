@@ -1,21 +1,50 @@
 services:
-    bot:
+    production:
         build:
             context: .
             dockerfile: Dockerfile
+        image: my-discord-app-bot-production
         command: node index.js
         volumes:
-            - .:/usr/src/app
-            - /usr/src/app/node_modules
+            - .:/user/src/app
+            - /user/src/app/node_modules
         environment:
             - NODE_ENV=production
-        restart: unless-stopped
+        develop:
+            watch:
+             - action: sync
+               path: ./index.js
+               target: /user/src/app/index.js
+             - action: rebuild
+               path: ./package.json
+
+    dev:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: my-discord-app-bot
+        command: node index.js
+        volumes:
+            - .:/user/src/app
+            - /user/src/app/node_modules
+        environment:
+            - NODE_ENV=development
+        restart: on-failure
+        develop:
+            watch:
+             - action: sync
+               path: ./index.js
+               target: /user/src/app/index.js
+             - action: rebuild
+               path: ./package.json
 
     deploy:
         build:
             context: .
             dockerfile: Dockerfile
         command: node deploy-commands.js
-        volumes: 
-            - .:/usr/src/app
-            - /usr/src/app/node_modules
+        develop:
+            watch:
+            - action: sync
+              path: ./commands/slash/
+              target: /user/src/app/commands/slash

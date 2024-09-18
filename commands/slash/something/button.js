@@ -19,7 +19,7 @@ module.exports = {
 			.addComponents(cancelButton, continueButton);
 
         await interaction.reply({
-            content: `Are you sure?`,
+            content: `Are you sure to continue?`,
             components: [row],
         });
     },
