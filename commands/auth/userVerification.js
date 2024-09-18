@@ -1,6 +1,6 @@
 const { ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
 const { COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR } = require('@/constant.js');
-const User = require('@models/User');
+const { User } = require('@models/index');
 
 module.exports = {
     async execute(message) {
@@ -58,8 +58,9 @@ module.exports = {
                     components: [],
                 });
             }
-        } catch (error) {
-            await message.channel.send(error);
+        } catch (error) { 
+            console.error('Error when verifying user:', error.toJSON(), error.message);
+            await message.channel.send('There was an error when verifying your account.');
         }
     },
 }

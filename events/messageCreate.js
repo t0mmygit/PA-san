@@ -1,14 +1,13 @@
 const { Events } = require('discord.js');
 const { PREFIX } = require('@/constant.js');
 const { removeOngoingCommand } = require('@/handlers/storageHandler.js');
-const User = require('@models/User');
+const { User } = require('@/models/index');
 
 module.exports = (client) => {
     client.on(Events.MessageCreate, async message => {
         if (!message.content.startsWith(PREFIX) || message.author.bot) return;
         
-        // TODO: UserService instead
-        const user = await User.findOne({ where: { discord_id: message.author.id } });
+        const user = await User.getByDiscordId(message.author.id);
 
         if (user === null) {
             await require('@auth/userVerification').execute(message);

@@ -1,6 +1,7 @@
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 require('module-alias/register');
 require('dotenv').config();
+require('@models/index');
 
 const client = new Client({ 
 	intents: [
@@ -15,7 +16,7 @@ module.exports.client = client;
 client.commands = new Collection();
 client.prefixCommands = new Collection();
 
-console.log('Loading slash commands...')
+console.log('Loading slash commands...');
 require('@handlers/commandHandler')(client);
 require('@handlers/prefixCommandHandler')(client);
 
