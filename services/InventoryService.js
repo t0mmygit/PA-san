@@ -1,17 +1,15 @@
-const Inventory = require('@models/Inventory');
-const User = require('@models/User');
+const { User, Inventory } = require('@models/index');
 
 class InventoryService {
     constructor() {
         this.inventory = Inventory;
     }
 
-    async createInventory(value, userId) {
+    async createInventory(value, discordId) {
         try {
-            const inventory = await this.inventory.create(value);
+            const user = await User.getByDiscordId(discordId);
 
-            // TODO: UserService Instead
-            const user = await User.findOne({ where: { discord_id: userId }});
+            const inventory = await this.inventory.create(value);
 
             inventory.setUser(user);
 
@@ -20,6 +18,31 @@ class InventoryService {
             // TODO: Handle in other file | Proper error handling?
             console.error(`Error creating inventory: ${error.message}`);
         }
+    }
+
+    async saveTicket(ticket, discordId) {
+        try {
+            const user = await User.getByDiscordId(discordId);
+            const inventory = await user.getInventory();
+
+            if (inventory) {
+                inventory.setTicketQuantity(ticket);
+
+                return;
+            }
+
+            await this.createInventory({ ticket_quantity: ticket }, discordId);
+        } catch (error) {
+
+        }
+    }
+
+    async hasTicket(discordId) {
+        const user = await User.getByDiscordId(discordId);
+ 
+        const inventory = await user.getInventory();
+
+        return inventory.hasTicket();
     }
 }
 

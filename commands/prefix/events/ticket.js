@@ -1,7 +1,8 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 const { PREFIX, COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR, COLLECTOR_MAX, COLLECTOR_TIME } = require("@/constant.js");
-const storage = require('@//storage.js');
+const storage = require('@/storage.js');
 const InventoryService = require('@services/InventoryService');
+const { User } = require('@models/index');
 
 function isIntegerAndPositive(string) {
     const number = Number(string);
@@ -24,8 +25,17 @@ module.exports = {
             .setColor(COLOR_SECONDARY)
             .setTitle('Bocchi\'s Ticket Store')
             .setDescription('Store is open! Please input the amount of tickets you would like to sell.')
-            .setFields({ name: '\u2008', value: '\u2008' })
             .setFooter({ text: 'Input must be a positive integer.' });
+
+            const user = await User.getByDiscordId(message.author.id);
+            const inventory = await user.getInventory();
+
+            if (inventory && inventory.hasTicket()) {
+                embed.setFields({ 
+                    name: 'NOTICE',
+                    value: wrapCodeBlock(`You currently have ${inventory.ticket_quantity} ticket listed. This process will overwrite existing list.`)
+                });
+            }
 
             const row = new ActionRowBuilder()
                 .setComponents(
@@ -79,7 +89,7 @@ module.exports = {
             const secondInteraction = await response.edit({
                 embeds: [secondEmbed],
                 components: [row],
-            })  
+            }); 
 
             const secondFilter = (interaction) => interaction.user.id === message.author.id;
             const secondResponse = await secondInteraction.awaitMessageComponent({ filter: secondFilter, time: COLLECTOR_TIME }); 
@@ -91,9 +101,7 @@ module.exports = {
                     const savedEmbed = EmbedBuilder.from(response.embeds[0])
                         .setColor(COLOR_SUCCESS);
 
-                    const inventory = await new InventoryService().createInventory({
-                        ticket_quantity: collected.content,
-                    }, message.author.id);
+                    await new InventoryService().saveTicket(collected.content, message.author.id);
 
                     await response.edit({
                         content: wrapBold('Record have been saved.'),
