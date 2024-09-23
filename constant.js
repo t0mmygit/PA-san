@@ -1,15 +1,14 @@
-const { ActivityType } = require('discord.js');
+const { ActivityType, Colors } = require('discord.js');
 
 module.exports = {
-    PREFIX: '?hey',
+    PREFIX: 'PA!', // Make it dynamic for each guild config
     BOT_STATUS: 'idle',
     ACTIVITY_TYPE: ActivityType.playing,
-    ACTIVITY_NAME: 'discord.js',
-    GUILD_LOG_CHANNEL_ID: '1236677665042468935',
-    COLOR_ERROR: 0xFF0000,
-    COLOR_SUCCESS: 0x00FF00,
-    COLOR_INFO: 0x0000FF,
-    COLOR_SECONDARY: 0x808080,
+    ACTIVITY_NAME: process.env.NODE_ENV === 'production' ? 'as Alto Otogi' : 'the guitar',
+    COLOR_ERROR: Colors.Red,
+    COLOR_SUCCESS: Colors.Green,
+    COLOR_INFO: Colors.Aqua,
+    COLOR_SECONDARY: Colors.LightGrey,
     COLLECTOR_MAX: 10,
-    COLLECTOR_TIME: 60_000,
+    COLLECTOR_TIME: process.env.NODE_ENV === 'production' ? 60_000 : 10_000,
 };

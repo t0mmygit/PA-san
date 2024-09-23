@@ -1,6 +1,8 @@
 const { readdirSync } = require('node:fs');
 const { join } = require('node:path');
 
+const requiredProperties = ['name', 'category', 'description', 'execute'];
+
 module.exports = (client) => {
     const folderPath = join(process.cwd(), 'commands/prefix');
     const commandFolders = readdirSync(folderPath);
@@ -13,10 +15,12 @@ module.exports = (client) => {
             const filePath = join(commandsPath, file);;
             const command = require(filePath);
 
-            if ('name' in command && 'execute' in command) {
+            if (requiredProperties.every(property => property in command)) {
                 client.prefixCommands.set(command.name, command);
                 console.log(`Loaded prefix command: ${command.name}`);
             }
         }
     }
+
+    console.log(`Loaded ${client.prefixCommands.size} prefix commands.`);
 }

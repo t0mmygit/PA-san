@@ -3,18 +3,18 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-        image: my-discord-app-bot-production
+        image: my-discord-app:prod
         command: node index.js
         volumes:
-            - .:/user/src/app
-            - /user/src/app/node_modules
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
         environment:
             - NODE_ENV=production
         develop:
             watch:
              - action: sync
                path: ./index.js
-               target: /user/src/app/index.js
+               target: /usr/src/app/index.js
              - action: rebuild
                path: ./package.json
 
@@ -22,11 +22,11 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-        image: my-discord-app-bot
+        image: my-discord-app:dev
         command: node index.js
         volumes:
-            - .:/user/src/app
-            - /user/src/app/node_modules
+            - .:/usr/src/app
+            - /usr/src/app/node_modules
         environment:
             - NODE_ENV=development
         restart: on-failure
@@ -34,7 +34,7 @@ services:
             watch:
              - action: sync
                path: ./index.js
-               target: /user/src/app/index.js
+               target: /usr/src/app/index.js
              - action: rebuild
                path: ./package.json
 
@@ -47,4 +47,4 @@ services:
             watch:
             - action: sync
               path: ./commands/slash/
-              target: /user/src/app/commands/slash
+              target: /usr/src/app/commands/slash

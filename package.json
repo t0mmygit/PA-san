@@ -16,6 +16,7 @@
     "@events": "events",
     "@models": "models",
     "@handlers": "handlers",
-    "@services": "services"
+    "@services": "services",
+    "@utils": "utils"
   }
 }
