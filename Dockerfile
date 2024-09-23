@@ -1,6 +1,9 @@
 FROM node:18-alpine
 
-WORKDIR /user/src/app
+ARG BUILD_VERSION=dev
+LABEL version=$BUILD_VERSION
+
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 
