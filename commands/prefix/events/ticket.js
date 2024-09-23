@@ -1,26 +1,15 @@
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
 const { PREFIX, COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR, COLLECTOR_MAX, COLLECTOR_TIME } = require("@/constant.js");
-const storage = require('@/storage.js');
+const { wrapInCodeBlock, wrapInBold, isIntegerAndPositive } = require("@utils");
 const InventoryService = require('@services/InventoryService');
-const { User } = require('@models/index');
-
-function isIntegerAndPositive(string) {
-    const number = Number(string);
-
-    return Number.isInteger(number) && number > 0;
-}
-
-function wrapCodeBlock(string) {
-    return `\`\`\`${string}\`\`\``;
-}
-
-function wrapBold(string) {
-    return `**${string}**`;
-}
+const storage = require('@/storage.js');
+const { User } = require('@models');
 
 module.exports = {
     name: 'ticket',
-    async execute(client, message) {
+    category: 'events',
+    description: 'No description yet.',
+    async execute(_, message, args) {
         const embed = new EmbedBuilder()
             .setColor(COLOR_SECONDARY)
             .setTitle('Bocchi\'s Ticket Store')
@@ -33,7 +22,7 @@ module.exports = {
             if (inventory && inventory.hasTicket()) {
                 embed.setFields({ 
                     name: 'NOTICE',
-                    value: wrapCodeBlock(`You currently have ${inventory.ticket_quantity} ticket listed. This process will overwrite existing list.`)
+                    value: wrapInCodeBlock(`You currently have ${inventory.ticket_quantity} ticket listed. This process will overwrite existing list.`)
                 });
             }
 
@@ -83,7 +72,7 @@ module.exports = {
                 .setColor(COLOR_SECONDARY)
                 .setDescription(null)
                 .setFields(
-                    { name: 'You\'ve inserted the following', value: wrapCodeBlock(collected.content + ' Tickets') }
+                    { name: 'You\'ve inserted the following', value: wrapInCodeBlock(collected.content + ' Tickets') }
                 );
 
             const secondInteraction = await response.edit({
@@ -104,7 +93,7 @@ module.exports = {
                     await new InventoryService().saveTicket(collected.content, message.author.id);
 
                     await response.edit({
-                        content: wrapBold('Record have been saved.'),
+                        content: wrapInBold('Record have been saved.'),
                         embeds: [savedEmbed],
                         components: [],
                     });
@@ -121,7 +110,7 @@ module.exports = {
             
             if (reason === 'time') {
                 await response.edit({ 
-                    content: wrapBold('Timed out! Please try again.'),
+                    content: wrapInBold('Timed out! Please try again.'),
                     embeds: [defaultFailedEmbed],
                     components: [],
                 });
@@ -129,7 +118,7 @@ module.exports = {
 
             if (reason === 'cancel-by-user') {
                 await response.edit({
-                    content: wrapBold(`${message.author} has cancelled this action.`),
+                    content: wrapInBold(`${message.author} has cancelled this action.`),
                     embeds: [defaultFailedEmbed],
                     components: [],
                 })
