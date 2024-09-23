@@ -1,7 +1,8 @@
 const { Events } = require('discord.js');
 const { PREFIX } = require('@/constant.js');
 const { removeOngoingCommand } = require('@/handlers/storageHandler.js');
-const { User } = require('@/models/index');
+const logError = require('@handlers/errorHandler');
+const { User } = require('@/models');
 
 module.exports = (client) => {
     client.on(Events.MessageCreate, async message => {
@@ -11,8 +12,6 @@ module.exports = (client) => {
 
         if (user === null) {
             await require('@auth/userVerification').execute(message);
-
-            // TODO: Greet and show available command
 
             return;
         }
@@ -31,7 +30,9 @@ module.exports = (client) => {
         const command = client.prefixCommands.get(action);
 
         if (!command) {
-            console.log(`Message Error: Command '${action}' not found or does not exist.`);
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`Message Error: Command '${action}' not found or does not exist.`);
+            }
             
             return;
         }
@@ -39,9 +40,9 @@ module.exports = (client) => {
         await removeOngoingCommand(client, message, action);
 
         try {
-            await command.execute(client, message);
+            await command.execute(client, message, args);
         } catch (error) {
-            console.log('Message Error:', error)
+            logError(error, __filename);
         }
     });
 }
