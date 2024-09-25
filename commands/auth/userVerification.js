@@ -1,7 +1,7 @@
 const { ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
 const { PREFIX, COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR, COLLECTOR_TIME } = require('@/constant.js');
-const { wrapInBold, wrapInCodeBlock } = require('@utils');
-const logError = require('@/handlers/errorHandler');
+const { wrapInCodeBlock } = require('@utils');
+const { logError } = require('@/handlers/errorHandler');
 const { User } = require('@models/index');
 
 module.exports = {
@@ -63,17 +63,7 @@ module.exports = {
                 });
             }
         } catch (error) { 
-            if (error.message.includes('time')) {
-                const timeoutEmbed = EmbedBuilder.from(response.embeds[0]).setColor(COLOR_ERROR);
-
-                response.edit({
-                    content: wrapInBold('Timed out! Please try again.'),
-                    embeds: [timeoutEmbed],
-                    components: [],
-                });
-            } else {
-                logError(error, __filename);
-            }
+            await logError(error, response, __filename);
         }
     },
 }
