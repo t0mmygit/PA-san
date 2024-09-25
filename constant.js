@@ -10,5 +10,5 @@ module.exports = {
     COLOR_INFO: Colors.Aqua,
     COLOR_SECONDARY: Colors.LightGrey,
     COLLECTOR_MAX: 10,
-    COLLECTOR_TIME: process.env.NODE_ENV === 'production' ? 60_000 : 10_000,
+    COLLECTOR_TIME: process.env.NODE_ENV === 'production' ? 60_000 : 20_000,
 };
