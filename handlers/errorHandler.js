@@ -1,8 +1,7 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, bold, inlineCode, codeBlock } = require('discord.js');
 const client = require('@/index.js').client;
 const { basename } = require('node:path');
 const { COLOR_ERROR } = require('@/constant.js');
-const { wrapInBold, wrapInCodeBlock } = require('@utils');
 
 // TODO: Handle 'deleted' collector error.
 
@@ -43,7 +42,7 @@ function handleEmbedTimeoutError(error, response) {
     const timeoutEmbed = EmbedBuilder.from(response.embeds[0]).setColor(COLOR_ERROR);
 
     response.edit({
-        content: wrapInBold('Timed out! Please try again.'),
+        content: bold('Timed out! Please try again.'),
         embeds: [timeoutEmbed],
         components: [],
     });
@@ -64,9 +63,9 @@ function constructErrorEmbedFieldValue(error) {
     let errors = [];
     const { code, message, stack } = error;
 
-    if (code) errors.push(`${wrapInCodeBlock('code', 'single')} ${code}`);
-    if (message) errors.push(`${wrapInCodeBlock('message', 'single')} ${message}`);
-    if (stack) errors.push(`${wrapInCodeBlock('stack', 'single')} ${stack}`);
+    if (code) errors.push(`${inlineCode('code')} ${code}`);
+    if (message) errors.push(inlineCode('message') + message);
+    if (stack) errors.push(codeBlock(stack));
 
     // TODO: Handle getOwnProperties errors.
     
