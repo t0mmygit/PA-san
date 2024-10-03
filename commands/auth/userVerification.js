@@ -1,6 +1,5 @@
-const { ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
+const { ButtonBuilder, ButtonStyle, ActionRowBuilder, EmbedBuilder, inlineCode } = require('discord.js');
 const { PREFIX, COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR, COLLECTOR_TIME } = require('@/constant.js');
-const { wrapInCodeBlock } = require('@utils');
 const { logError } = require('@/handlers/errorHandler');
 const { User } = require('@models/index');
 
@@ -15,7 +14,7 @@ module.exports = {
             .setTitle('User Verification')
             .setDescription(
                 'Your account has been verified!\n\n' + 
-                `Type ${wrapInCodeBlock(PREFIX + ' help', 'single')} to get started with the bot.`
+                `Type ${inlineCode(PREFIX + ' help')} to get started with the bot.`
             )
             .setColor(COLOR_SUCCESS);
                 

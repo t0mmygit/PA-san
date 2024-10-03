@@ -1,6 +1,6 @@
-const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, inlineCode, bold, codeBlock, userMention } = require("discord.js");
 const { PREFIX, COLOR_SECONDARY, COLOR_SUCCESS, COLOR_ERROR, COLLECTOR_MAX, COLLECTOR_TIME } = require("@/constant.js");
-const { addSuffix, wrapInCodeBlock, wrapInBold, isIntegerAndPositive } = require("@utils");
+const { addSuffix, isIntegerAndPositive } = require("@utils");
 const { handleError, logError } = require("@handlers/errorHandler");
 const InventoryService = require('@services/InventoryService');
 const storage = require('@/storage.js');
@@ -64,7 +64,7 @@ async function handleBulletinInteraction(message, filter) {
     const { count, rows } = await User.findAndCountAll(); 
 
     bulletinEmbed.setFields({
-        name: wrapInBold(`Showing results ${count} of ${count}`),
+        name: bold(`Showing results ${count} of ${count}`),
         value: await constructUsersField(rows) 
     });
 
@@ -84,8 +84,8 @@ async function handleTicketInteraction(response, message) {
 
         if (inventory && inventory.hasTicket()) {
             inputTicketEmbed.setFields({ 
-                name: wrapInCodeBlock('NOTICE', 'single'),
-                value: wrapInCodeBlock(`You currently have ${inventory.ticket_quantity} ticket listed. This process will overwrite existing list.`)
+                name: inlineCode('NOTICE'),
+                value: codeBlock(`You currently have ${inventory.ticket_quantity} ticket listed. This process will overwrite existing list.`)
             });
         }
 
@@ -117,7 +117,7 @@ async function collectUserMessage(response, message) {
                 .setColor(COLOR_SECONDARY)
                 .setDescription(null)
                 .setFields(
-                    { name: 'You\'ve inserted the following', value: wrapInCodeBlock(collected.content + ' Tickets') }
+                    { name: 'You\'ve inserted the following', value: codeBlock(collected.content + ' Tickets') }
                 );
 
             const saveActionRow = new ActionRowBuilder()
@@ -163,7 +163,7 @@ async function saveUserTicketInteraction(collector, collected, response, message
                 await new InventoryService().saveTicket(collected.content, message.author.id);
 
                 await response.edit({
-                    content: wrapInBold('Record have been saved.'),
+                    content: bold('Record have been saved.'),
                     embeds: [savedEmbed],
                     components: [],
                 });
@@ -184,7 +184,7 @@ async function handleCollectorEnd(response, message, reason) {
         
         if (reason === 'time') {
             await response.edit({ 
-                content: wrapInBold('Timed out! Please try again.'),
+                content: bold('Timed out! Please try again.'),
                 embeds: [defaultFailedEmbed],
                 components: [],
             });
@@ -192,7 +192,7 @@ async function handleCollectorEnd(response, message, reason) {
 
         if (reason === 'cancel-by-user') {
             await response.edit({
-                content: wrapInBold(`${message.author} has cancelled this action.`),
+                content: bold(`${message.author} has cancelled this action.`),
                 embeds: [defaultFailedEmbed],
                 components: [],
             })
@@ -210,8 +210,8 @@ async function handleCollectorEnd(response, message, reason) {
 }
 
 async function constructUserField(index, user) { 
-    const number = wrapInCodeBlock(addSuffix(index, '. '), 'single');
-    const mention = `<@${user.discord_id}>`;
+    const number = inlineCode(addSuffix(index, '. '));
+    const mention = userMention(user.discord_id);
 
     const inventory = await user.getInventory();
     const ticket = inventory ? inventory.ticket_quantity : 0;

@@ -1,9 +1,9 @@
-const { EmbedBuilder } = require("discord.js")
+const { EmbedBuilder, inlineCode } = require("discord.js")
 const { basename } = require('node:path');
 const { COLOR_SECONDARY } = require("@/constant.js");
-const { wrapInBold, wrapInCodeBlock, capitalize } = require('@utils');
+const { capitalize } = require('@utils');
 
-// TODO: Commands List Caching
+// TODO: Commands List
 // TODO: Emoji per category?
 
 module.exports = {
@@ -30,8 +30,8 @@ async function showCommands(client, message) {
 
     for (const [category, commands] of Object.entries(categories)) {
         embed.addFields({
-            name: `${wrapInBold(capitalize(category))}`,
-            value: commands.map(command => wrapInCodeBlock(command, 'single')).join(', '),
+            name: `${bold(capitalize(category))}`,
+            value: commands.map(command => inlineCode(command)).join(', '),
             inline: true,
         })
     }

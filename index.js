@@ -23,5 +23,6 @@ require('@handlers/prefixCommandHandler')(client);
 require('@events/clientReady')(client);
 require('@events/messageCreate')(client);
 require('@events/interactionCreate')(client);
+require('@events/guildCreate')(client);
 
 client.login(process.env.DISCORD_TOKEN);
