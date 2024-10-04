@@ -17,7 +17,6 @@ module.exports = (client) => {
 
             if (requiredProperties.every(property => property in command)) {
                 client.prefixCommands.set(command.name, command);
-                console.log(`Loaded prefix command: ${command.name}`);
             }
         }
     }

@@ -8,6 +8,8 @@ const { COLOR_ERROR } = require('@/constant.js');
 async function handleError(error, fileName) {
     if (isTimeoutError(error)) return;
 
+    console.error('Handled Error:', error);
+
     const errorEmbed = new EmbedBuilder()
         .setTitle(basename(fileName))
         .setFields(
@@ -58,8 +60,6 @@ function isTimeoutError(error) {
 }
 
 function constructErrorEmbedFieldValue(error) {
-    console.error(error);
-
     let errors = [];
     const { code, message, stack } = error;
 

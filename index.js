@@ -16,7 +16,6 @@ module.exports.client = client;
 client.commands = new Collection();
 client.prefixCommands = new Collection();
 
-console.log('Loading slash commands...');
 require('@handlers/commandHandler')(client);
 require('@handlers/prefixCommandHandler')(client);
 
