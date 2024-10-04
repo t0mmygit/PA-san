@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:22-alpine3.20
 
 ARG BUILD_VERSION=dev
 LABEL version=$BUILD_VERSION
