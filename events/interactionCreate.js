@@ -15,10 +15,13 @@ module.exports = (client) => {
             await command.execute(interaction);
         } catch (error) {
             console.error(error);
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: '1. There was an error while executing this command!', ephemeral: true });
+
+            if (interaction.replied) {
+                await interaction.followUp({ content: 'Error: Interaction replied.', ephemeral: true });
+            } else if (interaction.deferred) {
+                await interaction.followUp({ content: 'Error: Interaction deferred.', ephemeral: true });
             } else {
-                await interaction.reply({ content: '2. There was an error while executing this command!', ephemeral: true });
+                await interaction.followUp({ content: '2. There was an error while executing this command!', ephemeral: true });
             }
         }   
     });    
