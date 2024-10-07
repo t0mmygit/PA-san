@@ -1,13 +1,11 @@
 'use strict';
 
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   class Guild extends Model {
     static associate(models) {
-      // define association here
+      Guild.hasMany(models.Channel, { foreignKey: 'guild_id'} );
     }
 
     togglePrefixStatus() {
@@ -39,6 +37,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Guild',
+    underscored: true,
   });
 
   return Guild;

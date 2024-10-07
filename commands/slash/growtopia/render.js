@@ -35,18 +35,20 @@ module.exports = {
             await interaction.deferReply({ ephemeral: true });
 
             const options = getInteractionOptions(interaction);
-            const imageUrl = await getImageUrl(worldRenderLink + addExtension(options.name, 'png'));
+            const fetchResponse = await fetch(worldRenderLink + addExtension(options.name, 'png'));
 
-            if (typeof imageUrl === 'object' && imageUrl.message) {
-                await interaction.followUp({ content: imageUrl.message });
-                    
+            if (!fetchResponse.ok) {
+                await interaction.followUp({
+                    content: 'Render not found! Is this world rendered?',
+                });
+                
                 return;
             }
-
+            const imageUrl = await getImageUrl(fetchResponse, interaction);
             const embed = await createEmbed(interaction, options, imageUrl);
-            await interaction.deleteReply();
-            await interaction.channel.send({ embeds: [embed] });
 
+            await interaction.channel.send({ embeds: [embed] });
+            await interaction.deleteReply();
         } catch (error) {
             await handleError(error, __filename);
         }
@@ -62,12 +64,9 @@ function getInteractionOptions(interaction) {
     };
 }
 
-async function getImageUrl(originalUrl) {
-    const response = await fetch(originalUrl);
-
-    if (!response.ok) return { message: 'World render not found, either world is not rendered or the bot is on mental breakdown.' };
-
+async function getImageUrl(response, interaction) {
     const attachment = await createAttachment(response, 'buffer');
+    attachment.setName(addExtension(interaction.user.id, 'png'));
 
     const channel = await fetchChannel(process.env.IMAGE_CACHE_CHANNEL_ID);
     const message = await channel.send({
