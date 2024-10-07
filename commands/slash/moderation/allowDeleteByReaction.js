@@ -19,7 +19,7 @@ module.exports = {
             await setDeleteByReaction(interaction);
 
             await interaction.followUp({
-                content: bold(`Users can now delete messages from this bot using the <icon> reaction for this channel.`)
+                content: bold(`Users can now delete messages from this bot using the '❌' reaction for this channel.`)
             });
         } catch (error) {
             await handleError(error, __filename);
