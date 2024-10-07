@@ -1,4 +1,4 @@
-const { EmbedBuilder, inlineCode } = require("discord.js")
+const { EmbedBuilder, inlineCode, bold } = require("discord.js")
 const { basename } = require('node:path');
 const { COLOR_SECONDARY } = require("@/constant.js");
 const { capitalize } = require('@utils');
