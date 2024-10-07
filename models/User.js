@@ -11,25 +11,22 @@ module.exports = (sequelize, DataTypes) => {
         }
     }
 
-    User.init(
-        {
-            id: {
-                type: DataTypes.INTEGER,
-                autoIncrement: true,
-                primaryKey: true,
-            },
-            discord_id: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                unique: true,
-            },
+    User.init({
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
         },
-        {
-            sequelize,
-            underscored: true,
-            modelName: 'User',
+        discord_id: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            unique: true,
         },
-    );
+    }, {
+        sequelize,
+        underscored: true,
+        modelName: 'User',
+    });
 
     return User;
 }
