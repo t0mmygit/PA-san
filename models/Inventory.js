@@ -16,34 +16,32 @@ module.exports = (sequelize, DataTypes) => {
         }
     }
 
-    Inventory.init(
-        {
-            id: {
-                primaryKey: true,
-                autoIncrement: true,
-                type: DataTypes.INTEGER,
-            },
-            user_id: {
-                type: DataTypes.INTEGER,
-                references: {
-                    model: 'users',
-                    key: 'id',
-                },
-            },
-            is_private: {
-                type: DataTypes.BOOLEAN,
-                defaultValue: false,
-            },
-            ticket_quantity: {
-                type: DataTypes.INTEGER,
-            }
+    Inventory.init({
+        id: {
+            primaryKey: true,
+            autoIncrement: true,
+            type: DataTypes.INTEGER,
         },
-        {
-            sequelize,
-            underscored: true,
-            modelName: 'Inventory',
+        user_id: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: 'users',
+                key: 'id',
+            },
+        },
+        is_private: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        ticket_quantity: {
+            type: DataTypes.INTEGER,
         }
-    );
+    },
+    {
+        sequelize,
+        underscored: true,
+        modelName: 'Inventory',
+    });
 
     return Inventory;
 }
