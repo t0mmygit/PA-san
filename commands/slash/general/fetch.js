@@ -1,6 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { handleError } = require('@handlers/errorHandler');
-const { COLOR_SECONDARY } = require("@/constant.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,14 +30,13 @@ module.exports = {
                 embeds: [embed]
             });
         } catch (error) {
-            await handleError(error, __filename);
+            console.error(error);
         }
     }
 }
 
 function createEmbed(message) {
     const embed = new EmbedBuilder()
-        .setColor(COLOR_SECONDARY)
         .setTitle('Message detail');
 
     if (message.content) {
