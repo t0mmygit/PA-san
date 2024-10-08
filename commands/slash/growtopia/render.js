@@ -57,7 +57,7 @@ module.exports = {
 
 function getInteractionOptions(interaction) {
     return {
-        name: interaction.options.getString('name'),
+        name: interaction.options.getString('name').toLowerCase(),
         character: interaction.options.getString('character'),
         series: interaction.options.getString('series'),
         credit: interaction.options.getString('credit')
