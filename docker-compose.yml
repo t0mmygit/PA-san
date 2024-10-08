@@ -37,20 +37,3 @@ services:
                target: /usr/src/app/index.js
              - action: rebuild
                path: ./package.json
-
-    deploy:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        image: my-discord-app:deploy
-        command: node deploy-commands.js
-        volumes:
-            - .:/usr/src/app
-            - /usr/src/app/node_modules
-        environment:
-            - NODE_ENV=development
-        develop:
-            watch:
-            - action: sync
-              path: ./commands/slash/
-              target: /usr/src/app/commands/slash
