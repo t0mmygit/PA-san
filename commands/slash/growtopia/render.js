@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { COLOR_SECONDARY } = require("@/constant.js");
 const { addExtension } = require('@utils');
-const { client } = require('@/index.js');
+const client = require('@handlers/clientSingletonHandler.js');
 const { handleError } = require('@handlers/errorHandler');
 const worldRenderLink = 'https://s3.amazonaws.com/world.growtopiagame.com/';
 

@@ -1,8 +1,8 @@
 const { EmbedBuilder, bold, inlineCode, codeBlock } = require('discord.js');
-const client = require('@/index.js').client;
 const { basename } = require('node:path');
 const { COLOR_ERROR } = require('@/constant.js');
 const { subtext } = require('@discordjs/formatters');
+const client = require('@handlers/clientSingletonHandler.js');
 
 // TODO: Handle 'deleted' collector error.
 
@@ -32,11 +32,10 @@ async function handleError(error, fileName) {
         ) 
         .setFooter({ text: `Issued on ${humanReadableTimestamp}` });
 
-    let channel;
     const channelId = process.env.ERROR_LOGS_CHANNEL_ID;
 
     try {
-        channel = await client.channels.cache.get(channelId);
+        let channel = await client.channels.cache.get(channelId);
 
         if (!channel) {
             channel = await client.channels.fetch(channelId);
