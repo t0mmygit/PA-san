@@ -1,8 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, bold } = require('discord.js');
 const { COLOR_SECONDARY } = require("@/constant.js");
 const { addExtension } = require('@utils');
-const { client } = require('@/index.js');
 const { handleError } = require('@handlers/errorHandler');
+const webhook = require('@handlers/webhookHandler');
 const worldRenderLink = 'https://s3.amazonaws.com/world.growtopiagame.com/';
 
 module.exports = {
@@ -57,7 +57,7 @@ module.exports = {
 
 function getInteractionOptions(interaction) {
     return {
-        name: interaction.options.getString('name'),
+        name: interaction.options.getString('name').toLowerCase(),
         character: interaction.options.getString('character'),
         series: interaction.options.getString('series'),
         credit: interaction.options.getString('credit')
@@ -68,23 +68,12 @@ async function getImageUrl(response, interaction) {
     const attachment = await createAttachment(response, 'buffer');
     attachment.setName(addExtension(interaction.user.id, 'png'));
 
-    const channel = await fetchChannel(process.env.IMAGE_CACHE_CHANNEL_ID);
-    const message = await channel.send({
+    const message = await webhook.send({
+        content: `Requested by ${bold(interaction.user.username)} from ${bold(interaction.guild.name)}.`,
         files: [attachment]
-    });
+    }, 'image-cache');
 
-    return message.attachments.first().proxyURL;
-}
-
-async function fetchChannel(channelId) {
-    let channel;
-    channel = client.channels.cache.get(channelId);
-
-    if (!channel) {
-        channel = await client.channels.fetch(channelId);
-    }
-
-    return channel;
+    return message.attachments[0].proxy_url;
 }
 
 async function createEmbed(interaction, options, image) {

@@ -5,8 +5,8 @@ const { handleError } = require('@handlers/errorHandler');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('allow-delete-by-reaction')
-        .setDescription('Allow to delete message by reaction for this channel.'),
+        .setName('disable-delete-by-reaction')
+        .setDescription('Disable delete message by reaction for this channel.'),
     async execute(interaction) {
         try {
             await interaction.deferReply({ ephemeral: true });
@@ -16,10 +16,10 @@ module.exports = {
                 return;
             }
 
-            await setDeleteByReaction(interaction);
+            await disableDeleteByReaction(interaction);
 
             await interaction.followUp({
-                content: bold(`Users can now delete messages from this bot using the '❌' reaction for this channel.`)
+                content: bold(`Delete by reaction now disabled!`)
             });
         } catch (error) {
             await handleError(error, __filename);
@@ -31,7 +31,7 @@ function isModerator(member) {
     return member.permissions.has(PermissionFlagsBits.Administrator)
 }
 
-async function setDeleteByReaction(interaction) {
+async function disableDeleteByReaction(interaction) {
     try {
         let channel = await Channel.findOne({ where: { discord_channel_id: interaction.channelId } });
 
@@ -43,7 +43,7 @@ async function setDeleteByReaction(interaction) {
             });
         }
 
-        const settings = schema.validate({ allowDeleteByReaction: true });
+        const settings = schema.validate({ allowDeleteByReaction: false });
         console.table(settings);
 
         await channel.update({ settings: JSON.stringify(settings) });
