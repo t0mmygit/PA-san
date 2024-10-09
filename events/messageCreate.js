@@ -49,7 +49,9 @@ module.exports = (client) => {
 }
 
 function isAuthorizedUser(message) {
-    return message.member.roles.cache.has(process.env.DEVELOPER_ROLE_ID);
+    if (!message.member) return false;
+
+    return message.member.roles?.cache.has(process.env.DEVELOPER_ROLE_ID);
 }
 
 function isHome(guildId) {
