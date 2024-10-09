@@ -2,7 +2,7 @@ const { EmbedBuilder, bold, inlineCode, codeBlock } = require('discord.js');
 const { basename } = require('node:path');
 const { COLOR_ERROR } = require('@/constant.js');
 const { subtext } = require('@discordjs/formatters');
-const channel = require('@handlers/channelHandler')();
+const webhook = require('@handlers/webhookHandler');
 
 // TODO: Handle 'deleted' collector error.
 
@@ -32,14 +32,7 @@ async function handleError(error, fileName) {
         ) 
         .setFooter({ text: `Issued on ${humanReadableTimestamp}` });
 
-    try {
-        await channel.send({
-            content: 'An error has occured!',
-            embeds: [errorEmbed],
-        });
-    } catch (error) {
-        console.error('Failed to send error message.', error);
-    }
+        await webhook.send({ embeds: [errorEmbed] });
 }
 
 function handleEmbedTimeoutError(error, response) { 

@@ -8,8 +8,4 @@ module.exports = (client) => {
     client.on(Events.Warn, warn => {
         console.error('[Warn Event]', warn);
     });
-
-    client.on(Events.Debug, debug => {
-        console.error('[Debug Event]', debug);
-    });
 }
