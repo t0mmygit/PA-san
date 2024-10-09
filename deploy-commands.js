@@ -6,31 +6,36 @@ require('module-alias/register');
 const { Guild } = require('@models');
 const { Op } = require('sequelize');
 
+console.log("Running deploy-commands.js...");
+setTimeout(deployCommands, 3000);
+
 const commands = {
 	global: [],
 	guild: {}
 };
 
-const foldersPath = join(process.cwd(), 'commands/slash');
-const commandFolders = readdirSync(foldersPath);
+async function deployCommands() {
+	const foldersPath = join(process.cwd(), 'commands/slash');
+	const commandFolders = readdirSync(foldersPath);
 
-console.log(commandFolders);
+	console.table(commandFolders);
 
-for (const folder of commandFolders) {
-	const commandsPath = join(foldersPath, folder);
+	for (const folder of commandFolders) {
+		const commandsPath = join(foldersPath, folder);
 
-	if (folder === 'general') {
-		loadGlobalCommands(commandsPath);
-	} else {
-		loadCommands(commandsPath, folder);
+		if (folder === 'general') {
+			loadGlobalCommands(commandsPath);
+		} else {
+			await loadCommands(commandsPath, folder);
+		}
 	}
+	const rest = new REST().setToken(process.env.DISCORD_TOKEN);
+
+	console.log('\n[info] Refreshing application (/) commands...');
+	setTimeout(async () => await refreshApplicationCommandsThenExit(rest), 3000);
 }
 
-const rest = new REST().setToken(process.env.DISCORD_TOKEN);
-
-console.log("Deploying Commands...");
-
-(async () => {
+async function refreshApplicationCommandsThenExit(rest) {
 	try {
 		console.log(`Started refreshing application (/) commands.`);
 
@@ -45,14 +50,16 @@ console.log("Deploying Commands...");
 			await rest.put(
 				Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, guildID),
 				{ body: guildCommands },
-			)
+			);
 		}
 
 		console.log(`Successfully reloaded ${Object.keys(commands.guild).length} guild application (/) commands.`);
+		process.exit(0);
 	} catch (error) {
 		console.error(error);
+		process.exit(1);
 	}
-})();
+}
 
 function loadGlobalCommands(commandsPath) {
 	const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -67,13 +74,12 @@ function loadGlobalCommands(commandsPath) {
 		}
 	}
 
-	console.log(`Loaded ${commands.global.length} global commands.`);
-	console.table(commands.global, ['index', 'name', 'description']);
+	console.log(`[End Load Global Command] Loaded ${commands.global.length} global commands.`);
 }
 
 async function loadCommands(commandsPath, folder) {
 	const guilds = await Guild.findAll({
-		attributes: ['category'],
+		attributes: ['server_id', 'category'],
 		where: {
 			category: {
 				[Op.like]: `%${folder}%`			
@@ -81,7 +87,11 @@ async function loadCommands(commandsPath, folder) {
 		}
 	});
 
-	if (!guilds) return;
+	if (guilds.length === 0) {
+		console.log(`[info] No guilds found has the ${folder} category.`);
+
+		return;
+	}
 
 	const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 	
@@ -97,9 +107,8 @@ async function loadCommands(commandsPath, folder) {
 	}
 
 	for (const guild of guilds) {
-		commands.guild[guild.id] = currentFolderCommands;
+		commands.guild[guild.server_id] = currentFolderCommands;
 	}
 
-	console.log(`Loaded ${Object.keys(commands.guild).length} guild commands.`);
-	console.table(commands.guild, ['index', 'name', 'description']);
+	console.log(`[End Load Command] Loaded ${Object.keys(commands.guild).length} guild commands with ${folder} category.`);
 }
