@@ -53,7 +53,7 @@ async function refreshApplicationCommandsThenExit(rest) {
 			);
 		}
 
-		console.log(`Successfully reloaded ${Object.keys(commands.guild).length} guild application (/) commands.`);
+		console.log(`Successfully reloaded ${Object.keys(commands.guild).length} guild application.`);
 		process.exit(0);
 	} catch (error) {
 		console.error(error);
@@ -107,7 +107,8 @@ async function loadCommands(commandsPath, folder) {
 	}
 
 	for (const guild of guilds) {
-		commands.guild[guild.server_id] = currentFolderCommands;
+		if (commands.guild[guild.server_id] === undefined) commands.guild[guild.server_id] = [];
+		commands.guild[guild.server_id].push(...currentFolderCommands);
 	}
 
 	console.log(`[End Load Command] Loaded ${Object.keys(commands.guild).length} guild commands with ${folder} category.`);
