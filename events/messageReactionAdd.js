@@ -165,7 +165,7 @@ async function qualifyMessage(message) {
     const embed = EmbedBuilder.from(message.embeds[0]);
 
     await message.edit({
-        content: bold("Qualified!"),
+        content: bold(`Qualified for ${getCurrentMonth()} Pixlr Contest!`),
         embeds: [embed.setColor(COLOR_SUCCESS)],
     });
 }
@@ -180,15 +180,25 @@ function isQualifiedReaction(emojiName) {
     return emojiName === "✅";
 }
 
+function isNotQualifiedReaction(emojiName) {
+    return emojiName === "❌";
+}
+
+function isDeleteReaction(emojiName) {
+    return emojiName === "🗑️";
+}
+
+function getCurrentMonth() {
+    const date = new Date();
+
+    return date.toLocaleString("default", { month: "long" });
+}
+
 async function isAdministrator(reaction, user) {
     // TODO: Check if user has permission or allowed to qualify (user role choose)
     const member = await reaction.message.guild.members.fetch(user.id);
 
     return member.permissions.has(PermissionFlagsBits.Administrator);
-}
-
-function isDeleteReaction(emojiName) {
-    return emojiName === "❌";
 }
 
 function getinteractionUserID(message) {
