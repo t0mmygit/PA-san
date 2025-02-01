@@ -37,17 +37,15 @@ module.exports = {
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true);
 
-        const actionRows = constructActionRow(
-            userInput,
-            discordInput,
+        const userActionRow = new ActionRowBuilder().addComponents(userInput);
+        const discordActionRow = new ActionRowBuilder().addComponents(
+            discordInput
+        );
+        const reasonActionRow = new ActionRowBuilder().addComponents(
             reasonInput
         );
-        modal.setComponents(actionRows);
 
+        modal.addComponents(userActionRow, discordActionRow, reasonActionRow);
         await interaction.showModal(modal);
     },
 };
-
-function constructActionRow(inputs) {
-    return new ActionRowBuilder().setComponents(inputs);
-}
