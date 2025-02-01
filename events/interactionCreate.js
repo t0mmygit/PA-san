@@ -3,7 +3,7 @@ const { Events } = require("discord.js");
 module.exports = (client) => {
     client.on(Events.InteractionCreate, async (interaction) => {
         if (interaction.isModalSubmit()) {
-            await handleModalSubmit(interaction);
+            require("@handlers/modalHandler")(interaction);
         }
 
         if (!interaction.isChatInputCommand()) return;
@@ -42,4 +42,3 @@ module.exports = (client) => {
         }
     });
 };
-
