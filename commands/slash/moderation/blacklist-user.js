@@ -1,9 +1,10 @@
-const { ModalBuilder, TextInputBuilder } = require("@discordjs/builders");
 const {
-    SlashCommandBuilder,
-    TextInputStyle,
     ActionRowBuilder,
-} = require("discord.js");
+    ModalBuilder,
+    TextInputBuilder,
+    SlashCommandBuilder,
+} = require("@discordjs/builders");
+const { TextInputStyle } = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +12,7 @@ module.exports = {
         .setDescription("Blacklist a user"),
     async execute(interaction) {
         const modal = new ModalBuilder()
-            .setCustomId("modal")
+            .setCustomId("blacklist-user-modal")
             .setTitle("Create blacklist");
 
         const userInput = new TextInputBuilder()
@@ -27,7 +28,8 @@ module.exports = {
             .setLabel("Discord Username (if eligible)")
             .setMinLength(2)
             .setMaxLength(32)
-            .setStyle(TextInputStyle.Short);
+            .setStyle(TextInputStyle.Short)
+            .setRequired(false);
 
         const reasonInput = new TextInputBuilder()
             .setCustomId("reason")
