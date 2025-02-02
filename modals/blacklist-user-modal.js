@@ -17,14 +17,16 @@ module.exports = async (interaction) => {
 function constructEmbed(data) {
     const embed = new EmbedBuilder()
         .setTitle("Blacklisted User")
-        .setFields(
-            { name: "GrowID", value: data.userId, inline: true },
-            { name: "\u2008", value: codeBlock(data.reason) }
-        );
+        .setFields({ name: "GrowID", value: data.userId, inline: true });
 
-    if (data.discordId) {
-        embed.addFields({ name: "Discord Username", value: data.discordId });
+    if (data.discordId.length > 0) {
+        embed.addFields({
+            name: "Discord Username",
+            value: data.discordId,
+            inline: true,
+        });
     }
+    embed.addFields({ name: "\u2008", value: codeBlock(data.reason) });
 
     return embed;
 }
