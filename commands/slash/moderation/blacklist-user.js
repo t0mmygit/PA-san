@@ -32,7 +32,7 @@ module.exports = {
             .setRequired(false);
 
         const reasonInput = new TextInputBuilder()
-            .setCustomId("reason")
+            .setCustomId("reasonId")
             .setLabel("Reason")
             .setMinLength(8)
             .setMaxLength(100)
