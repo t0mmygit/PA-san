@@ -8,15 +8,16 @@ const {
     EmbedBuilder,
     inlineCode,
 } = require("discord.js");
-const { Channel, Guild } = require("@models");
 const {
     COLOR_SECONDARY,
     COLOR_SUCCESS,
     COLOR_ERROR,
     COLLECTOR_TIME,
 } = require("@/constant.js");
+const { Channel, Guild } = require("@models");
 const { handleError } = require("@handlers/errorHandler");
 const channelSchema = require("@schemas/channel-settings");
+const appHasPermission = require("@middlewares/appHasPermission");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,6 +25,15 @@ module.exports = {
         .setDescription(
             "Toggle to qualify message by reaction for this channel."
         ),
+
+    middlewares: [
+        appHasPermission([
+            PermissionFlagsBits.ManageMessages,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ViewChannel,
+        ]),
+    ],
+
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
@@ -32,8 +42,6 @@ module.exports = {
                 content: "You do not have permission to use this command!",
             });
         }
-
-        console.log("\nnew line\n");
         await qualifyByReaction(interaction);
     },
 };
