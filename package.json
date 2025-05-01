@@ -24,6 +24,7 @@
     "@models": "models",
     "@modals": "modals",
     "@handlers": "handlers",
+    "@middlewares": "middlewares",
     "@services": "services",
     "@utils": "utils",
     "@schemas": "schemas"

@@ -2,43 +2,56 @@ const { Events } = require("discord.js");
 
 module.exports = (client) => {
     client.on(Events.InteractionCreate, async (interaction) => {
-        if (interaction.isModalSubmit()) {
-            require("@handlers/modalHandler")(interaction);
-        }
-
         if (!interaction.isChatInputCommand()) return;
 
         const command = client.commands.get(interaction.commandName);
-
-        if (!command) {
-            console.error(
-                `No command matching ${interaction.commandName} was found.`
-            );
-            return;
-        }
+        if (!command) return;
 
         try {
-            await command.execute(interaction);
+            if (command.middlewares && command.middlewares.length > 0)
+                await executeWithMiddleware(
+                    interaction,
+                    command.middlewares,
+                    command.execute
+                );
+            else await command.execute(interaction);
         } catch (error) {
             console.error(error);
-
-            if (interaction.replied) {
-                await interaction.followUp({
-                    content: "Error: Interaction replied.",
-                    ephemeral: true,
-                });
-            } else if (interaction.deferred) {
-                await interaction.followUp({
-                    content: "Error: Interaction deferred.",
-                    ephemeral: true,
-                });
-            } else {
-                await interaction.followUp({
-                    content:
-                        "2. There was an error while executing this command!",
-                    ephemeral: true,
-                });
-            }
+            handleInteractionAction(interaction);
         }
     });
 };
+
+//function handleModal(interaction) {
+//    if (interaction.isModalSubmit()) {
+//        require("@handlers/modalHandler")(interaction);
+//    }
+//}
+
+async function executeWithMiddleware(interaction, middlewares, handler) {
+    for (const middleware of middlewares) {
+        const allowed = await middleware(interaction);
+        if (!allowed) return;
+    }
+
+    await handler(interaction);
+}
+
+async function handleInteractionAction(interaction) {
+    if (interaction.replied) {
+        await interaction.followUp({
+            content: "Error: Interaction replied.",
+            ephemeral: true,
+        });
+    } else if (interaction.deferred) {
+        await interaction.followUp({
+            content: "Error: Interaction deferred.",
+            ephemeral: true,
+        });
+    } else {
+        await interaction.followUp({
+            content: "1. There was an error while executing this command!",
+            ephemeral: true,
+        });
+    }
+}
