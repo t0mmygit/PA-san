@@ -173,7 +173,7 @@ async function handleCategoryUpdate(
         const commandArray = getFolderCommands(category);
         commands.push(...commandArray);
     }
-    await refreshGuildCommands(guildId, commands);
+    await refreshGuildCommands(confirmation.client.rest, guildId, commands);
     await setGuildCategory(guildId, newCategories);
 }
 
@@ -233,8 +233,9 @@ async function getGuildCategories(id) {
     return JSON.parse(guild.category).flat();
 }
 
-async function refreshGuildCommands(guildId, commands) {
-    await confirmation.client.rest.put(
+
+async function refreshGuildCommands(rest, guildId, commands) {
+    await rest.put(
         Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, guildId),
         { body: commands }
     );
