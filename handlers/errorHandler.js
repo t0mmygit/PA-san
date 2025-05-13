@@ -1,43 +1,14 @@
-const {
-    DiscordAPIError,
-    DiscordjsError,
-    DiscordjsErrorCodes,
-    EmbedBuilder,
-} = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const { basename } = require("node:path");
 const { COLOR_ERROR } = require("@/constant.js");
-const { inlineCode, codeBlock, subtext } = require("@discordjs/formatters");
+const { inlineCode, codeBlock } = require("@discordjs/formatters");
 const webhook = require("@handlers/webhookHandler");
 
 // TODO: Handle 'deleted' collector error. (When collecting, user/some sort event that cause the message to be deleted.)
-async function handleError(error, file, response = "none") {
+async function handleError(error, file) {
     console.error("Error Handled:", error);
-    if (error instanceof DiscordjsError) {
-        handleDiscordjsError(error, response);
-    }
-
-    if (error instanceof DiscordAPIError) {
-        handleDiscordAPIError(error, response);
-    }
-
     const errorEmbed = constructErrorEmbed(error, file);
     await webhook.send({ embeds: [errorEmbed] });
-}
-
-function handleDiscordjsError(error, response) {
-    if (error.code === DiscordjsErrorCodes.InteractionCollectorError) {
-        console.log("Interaction Collector Error (Not Handled Yet).");
-    }
-}
-
-async function handleDiscordAPIError(error, response) {
-    if (error.code == 50013) {
-        const message = await response.channel.send({
-            content: `Insufficient permissions! Please contact the server administrator. \n${subtext("Message will be deleted in 5 seconds.")}`,
-        });
-
-        setTimeout(() => message.delete(), 5000);
-    }
 }
 
 function readableTimestamp() {
