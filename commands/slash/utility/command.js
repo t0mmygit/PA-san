@@ -6,14 +6,17 @@ const {
     ActionRowBuilder,
     inlineCode,
     DiscordjsErrorCodes,
+    PermissionFlagsBits,
 } = require("discord.js");
 const { Guild } = require("@models");
 const { join } = require("node:path");
 const { readdirSync } = require("node:fs");
 const { COLLECTOR_TIME } = require("@/constant.js");
 const { handleError } = require("@handlers/errorHandler");
+const userHasPermission = require("@middlewares/userHasPermission");
 
 module.exports = {
+    middlewares: [userHasPermission([PermissionFlagsBits.Administrator])],
     data: new SlashCommandBuilder()
         .setName("command")
         .setDescription("Command Descriptions"),

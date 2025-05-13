@@ -6,8 +6,10 @@ const {
 const { Channel, Guild } = require("@models");
 const schema = require("@schemas/channel-settings");
 const { handleError } = require("@handlers/errorHandler");
+const userHasPermission = require("@middlewares/userHasPermission");
 
 module.exports = {
+    middlewares: [userHasPermission([PermissionFlagsBits.Administrator])],
     data: new SlashCommandBuilder()
         .setName("allow-delete-by-reaction")
         .setDescription(

@@ -1,9 +1,11 @@
 const { readdirSync } = require("fs");
 const { join } = require("path");
 const { inlineCode, subtext } = require("@discordjs/formatters");
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const userHasPermission = require("@middlewares/userHasPermission");
 
 module.exports = {
+    middlewares: [userHasPermission([PermissionFlagsBits.Administrator])],
     data: new SlashCommandBuilder()
         .setName("reload")
         .setDescription("Reloads a command.")

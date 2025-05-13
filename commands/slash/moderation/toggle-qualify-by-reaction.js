@@ -18,6 +18,7 @@ const { Channel, Guild } = require("@models");
 const { handleError } = require("@handlers/errorHandler");
 const channelSchema = require("@schemas/channel-settings");
 const appHasPermission = require("@middlewares/appHasPermission");
+const userHasPermission = require("@middlewares/userHasPermission");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,6 +28,7 @@ module.exports = {
         ),
 
     middlewares: [
+        userHasPermission([PermissionFlagsBits.Administrator]),
         appHasPermission([
             PermissionFlagsBits.ManageMessages,
             PermissionFlagsBits.SendMessages,
