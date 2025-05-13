@@ -7,13 +7,16 @@ const {
     inlineCode,
     DiscordjsErrorCodes,
     PermissionFlagsBits,
+    bold,
+    EmbedBuilder,
 } = require("discord.js");
 const { Guild } = require("@models");
 const { join } = require("node:path");
 const { readdirSync } = require("node:fs");
-const { COLLECTOR_TIME } = require("@/constant.js");
+const { COLLECTOR_TIME, COLOR_INFO } = require("@/constant.js");
 const { handleError } = require("@handlers/errorHandler");
 const userHasPermission = require("@middlewares/userHasPermission");
+const { COLOR_ERROR } = require("../../../constant");
 
 module.exports = {
     middlewares: [userHasPermission([PermissionFlagsBits.Administrator])],
@@ -23,90 +26,190 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
-        const guildCategories = await getGuildCategories(interaction.guildId);
-        console.table(guildCategories);
-        const currentCategories = [...new Set(guildCategories)];
-
-        const categories = getSlashCommandCategories();
-
-        const selectMenuOptions = categories.map((category) => {
-            return new StringSelectMenuOptionBuilder()
-                .setLabel(category)
-                .setDescription(
-                    currentCategories.includes(category)
-                        ? "Enabled"
-                        : "Disabled"
-                )
-                .setValue(category.toLowerCase());
-        });
-
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId("command_menu")
-            .setPlaceholder("Select a command to toggle")
-            .addOptions(selectMenuOptions);
-
-        const row = new ActionRowBuilder().addComponents(selectMenu);
-
-        const response = await interaction.followUp({
-            content: "Please choose a category to toggle.",
-            components: [row],
-            withResponse: true,
-        });
-
-        const collectorFilter = (i) => i.user.id === interaction.user.id;
         try {
-            const confirmation = await response.awaitMessageComponent({
-                filter: collectorFilter,
-                time: COLLECTOR_TIME,
-            });
+            const selectedGuildId = await handleGuildSelection(interaction);
+            if (!selectedGuildId)
+                throw new Error("[Operation Aborted] No Selected Guild ID!");
 
-            if (confirmation.customId === "command_menu") {
-                const folder = confirmation.values[0];
+            const guildCategories = await getGuildCategories(selectedGuildId);
+            const currentCategories = [...new Set(guildCategories)];
+            const categories = getSlashCommandCategories();
 
-                let newCategories;
-                if (currentCategories.includes(folder)) {
-                    newCategories = currentCategories.filter(
-                        (category) => category !== folder
-                    );
-                    await confirmation.reply({
-                        content: `${inlineCode(folder)} has been removed.`,
-                        components: [],
-                        withResponse: false,
-                    });
-                } else {
-                    newCategories = [...currentCategories, folder];
-                    await confirmation.reply({
-                        content: `${inlineCode(folder)} has been added.`,
-                        components: [],
-                        withResponse: false,
-                    });
-                }
+            await handleCategoryToggle(
+                interaction,
+                currentCategories,
+                categories,
+                selectedGuildId
+            );
 
-                const commands = [];
-                console.table(newCategories);
-                for (const category of newCategories) {
-                    const commandArray = getFolderCommands(category);
-                    commands.push(...commandArray);
-                }
-                await refreshGuildCommands(confirmation, commands);
-                await setGuildCategory(confirmation.guildId, newCategories);
-                console.info(__filename, " completed.");
-            }
+            console.info(__filename, " completed.");
         } catch (error) {
-            console.error(error);
-            if (
-                error &&
-                error.code === DiscordjsErrorCodes.InteractionCollectorError
-            ) {
-                await response.edit({
-                    content:
-                        "[Session Expired] Confirmation not received within 1 minute.",
-                });
-            }
             await handleError(error, __filename);
         }
     },
 };
+
+async function handleGuildSelection(interaction) {
+    const guilds = interaction.client.guilds.cache;
+    const guildSelectMenu = createGuildSelectMenu([...guilds.values()]);
+
+    const response = await interaction.editReply({
+        content: "Please select a server to manage",
+        components: [guildSelectMenu],
+    });
+
+    try {
+        const confirmation = await response.awaitMessageComponent({
+            filter: (i) => i.user.id === interaction.user.id,
+            time: COLLECTOR_TIME,
+        });
+
+        if (confirmation.customId !== "guild_select") return;
+        await confirmation.update({
+            content: bold("[Completed] Please proceed with the next prompt."),
+            components: [],
+        });
+
+        return confirmation.values[0];
+    } catch (error) {
+        if (error?.code === DiscordjsErrorCodes.InteractionCollectorError) {
+            await response.edit({
+                content: bold(
+                    "[Session Expired] Confirmation not received within 1 minute."
+                ),
+                components: [],
+            });
+        } else {
+            throw error;
+        }
+    }
+}
+
+async function handleCategoryToggle(
+    interaction,
+    currentCategories,
+    categories,
+    guildId
+) {
+    const guild = await interaction.client.guilds.fetch(guildId);
+    const categoryMenu = createCategorySelectMenu(
+        currentCategories,
+        categories
+    );
+    const embed = createGuildInfoEmbed(guild);
+
+    const response = await interaction.followUp({
+        embeds: [embed],
+        components: [categoryMenu],
+        withResponse: true,
+    });
+
+    try {
+        const confirmation = await response.awaitMessageComponent({
+            filter: (i) => i.user.id === interaction.user.id,
+            time: COLLECTOR_TIME,
+        });
+
+        if (confirmation.customId !== "command_menu") return;
+        await handleCategoryUpdate(
+            confirmation,
+            currentCategories,
+            confirmation.values[0],
+            guildId
+        );
+
+        await confirmation.update({
+            embeds: [embed.setColor(COLOR_INFO)],
+            components: [],
+        });
+    } catch (error) {
+        if (error?.code === DiscordjsErrorCodes.InteractionCollectorError) {
+            await response.edit({
+                content: bold(
+                    "[Session Expired] Confirmation not received within 1 minute."
+                ),
+                embeds: [embed.setColor(COLOR_ERROR)],
+                components: [],
+            });
+        } else {
+            throw error;
+        }
+    }
+}
+
+function createGuildInfoEmbed(guild) {
+    return new EmbedBuilder()
+        .setTitle("Server Configuration")
+        .setDescription(bold(guild.name))
+        .addFields({ name: "Server ID", value: guild.id, inline: true })
+        .setThumbnail(guild.iconURL())
+        .setTimestamp();
+}
+
+async function handleCategoryUpdate(
+    confirmation,
+    currentCategories,
+    folder,
+    guildId
+) {
+    let newCategories;
+    if (currentCategories.includes(folder)) {
+        newCategories = currentCategories.filter(
+            (category) => category !== folder
+        );
+        await confirmation.message.edit({
+            content: `${inlineCode(folder)} ${bold("has been disabled.")}`,
+        });
+    } else {
+        newCategories = [...currentCategories, folder];
+        await confirmation.message.edit({
+            content: `${inlineCode(folder)} ${bold("has been enabled.")}`,
+        });
+    }
+
+    const commands = [];
+    console.table(newCategories);
+    for (const category of newCategories) {
+        const commandArray = getFolderCommands(category);
+        commands.push(...commandArray);
+    }
+    await refreshGuildCommands(confirmation, commands);
+    await setGuildCategory(guildId, newCategories);
+}
+
+function createGuildSelectMenu(guilds) {
+    const options = guilds.map((guild) =>
+        new StringSelectMenuOptionBuilder()
+            .setLabel(guild.name)
+            .setDescription(guild.id)
+            .setValue(guild.id)
+    );
+
+    return new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+            .setCustomId("guild_select")
+            .setPlaceholder("Select a server to manage")
+            .addOptions(options)
+    );
+}
+
+function createCategorySelectMenu(currentCategories, categories) {
+    const selectMenuOptions = categories.map((category) => {
+        return new StringSelectMenuOptionBuilder()
+            .setLabel(category)
+            .setDescription(
+                currentCategories.includes(category) ? "Enabled" : "Disabled"
+            )
+            .setValue(category.toLowerCase());
+    });
+
+    return new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+            .setCustomId("command_menu")
+            .setPlaceholder("Select a command to toggle")
+            .addOptions(selectMenuOptions)
+    );
+}
 
 async function setGuildCategory(id, categories) {
     const guild = await Guild.findOne({
@@ -120,11 +223,12 @@ async function setGuildCategory(id, categories) {
 }
 
 async function getGuildCategories(id) {
-    const guild = await Guild.findOne({
+    const [guild, _] = await Guild.findOrCreate({
         where: {
             server_id: id,
         },
     });
+
     return JSON.parse(guild.category).flat();
 }
 
