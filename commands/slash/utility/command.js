@@ -228,6 +228,7 @@ async function getGuildCategories(id) {
             server_id: id,
         },
     });
+    if (Array.isArray(guild.category)) return guild.category.flat();
 
     return JSON.parse(guild.category).flat();
 }
