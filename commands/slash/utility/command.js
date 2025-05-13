@@ -233,6 +233,7 @@ async function getGuildCategories(id) {
     return JSON.parse(guild.category).flat();
 }
 
+
 async function refreshGuildCommands(rest, guildId, commands) {
     await rest.put(
         Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, guildId),
