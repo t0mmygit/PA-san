@@ -21,6 +21,7 @@ async function deployCommands() {
     const guilds = await rest.get(Routes.userGuilds());
 
     console.table(commandFolders);
+    await setMainGuildCategory(commandFolders);
     for (const folder of commandFolders) {
         const commandsPath = join(foldersPath, folder);
 
@@ -42,6 +43,18 @@ function getRESTinstance() {
     return rest;
 }
 
+async function setMainGuildCategory(folders) {
+    const [guild, _] = await Guild.findOrCreate({
+        where: {
+            server_id: process.env.DISCORD_GUILD_ID,
+        },
+    });
+    const categories = folders.filter((folder) => folder !== "general");
+    console.log(categories);
+
+    await guild.update({ category: JSON.stringify(categories) });
+}
+
 async function refreshApplicationCommandsThenExit(rest) {
     try {
         console.info(`Refreshing application (/) commands.`);
@@ -55,11 +68,11 @@ async function refreshApplicationCommandsThenExit(rest) {
             `Successfully reloaded ${globalData.length} global application (/) commands.`
         );
 
-        for (const [guildID, guildCommands] of Object.entries(commands.guild)) {
+        for (const [guildId, guildCommands] of Object.entries(commands.guild)) {
             await rest.put(
                 Routes.applicationGuildCommands(
                     process.env.DISCORD_CLIENT_ID,
-                    guildID
+                    guildId
                 ),
                 { body: guildCommands }
             );
