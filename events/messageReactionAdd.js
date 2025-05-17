@@ -102,7 +102,7 @@ async function handleReactionError(reaction, user, content) {
 
         await reaction.users.remove(user);
     } catch (error) {
-        await handleError(error, __filename, response);
+        await handleError(error, __filename);
     }
 }
 
