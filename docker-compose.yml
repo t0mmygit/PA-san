@@ -3,7 +3,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-        image: my-discord-app
+        image: my-discord-app:discordjs-14.19.3
         command: node index.js
         volumes:
             - .:/usr/src/app

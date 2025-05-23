@@ -16,17 +16,10 @@ module.exports = (client) => {
                 );
             else await command.execute(interaction);
         } catch (error) {
-            console.error(error);
-            handleInteractionAction(interaction);
+            await handleInteractionAction(interaction);
         }
     });
 };
-
-//function handleModal(interaction) {
-//    if (interaction.isModalSubmit()) {
-//        require("@handlers/modalHandler")(interaction);
-//    }
-//}
 
 async function executeWithMiddleware(interaction, middlewares, handler) {
     for (const middleware of middlewares) {
