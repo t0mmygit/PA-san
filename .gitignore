@@ -4,3 +4,4 @@
 .vscode
 database.sqlite
 README.md
+ecosystem.config.js
