@@ -3,6 +3,10 @@ const {
     AttachmentBuilder,
     EmbedBuilder,
     inlineCode,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    ComponentType,
 } = require("discord.js");
 const { handleError } = require("@handlers/errorHandler");
 
@@ -90,10 +94,17 @@ module.exports = {
                 attachment.filename,
                 attachment.contentType
             );
-            const buffer = await getResponseBuffer(response);
+            const APIResponse = await response.json();
+
+            const buffer = await getImageBuffer(APIResponse);
 
             console.log("Replying...");
-            await handleDiscordResponse(interaction, buffer, options);
+            await handleDiscordResponse(
+                interaction,
+                options,
+                buffer,
+                APIResponse
+            );
         } catch (error) {
             await handleErrorResponse(interaction);
             await handleError(error, __filename);
@@ -101,11 +112,13 @@ module.exports = {
     },
 };
 
-async function handleDiscordResponse(interaction, buffer, options) {
+async function handleDiscordResponse(
+    interaction,
+    options,
+    buffer,
+    APIResponse
+) {
     const attachment = new AttachmentBuilder(buffer, { name: "image.png" });
-    const footer = {
-        text: "This is just copium, do not rely 100% on this.",
-    };
 
     const embeds = new EmbedBuilder()
         .setTitle("Image Generated")
@@ -121,14 +134,108 @@ async function handleDiscordResponse(interaction, buffer, options) {
                 value: inlineCode(options.resize),
                 inline: true,
             }
-        )
-        .setFooter(footer);
+        );
 
-    await interaction.editReply({
+    const message = await interaction.editReply({
         embeds: [embeds],
         files: [attachment],
     });
+
+    console.info("Replying to this embeds: ", message);
+    const paletteLines = constructPalette(APIResponse.palette);
+    await sendPaginatedPalette(message, paletteLines);
+
     console.info("Response successful!");
+}
+
+function constructPalette(palette) {
+    return palette.map((color) => {
+        return `${color.name}: ${color.count}`;
+    });
+}
+
+async function sendPaginatedPalette(
+    interaction,
+    paletteLines,
+    title = "Color Palette"
+) {
+    const embeds = [];
+    const linesPerPage = 20;
+
+    for (let i = 0; i < paletteLines.length; i += linesPerPage) {
+        const chunk = paletteLines.slice(i, i + linesPerPage);
+        const embed = new EmbedBuilder()
+            .setTitle(title)
+            .setDescription(chunk.join("\n"))
+            .setFooter({
+                text: `Page ${Math.ceil((i + linesPerPage) / linesPerPage)} of ${Math.ceil(paletteLines.length / linesPerPage)}`,
+            });
+        embeds.push(embed);
+    }
+    if (embeds.length === 0) return;
+
+    const createButtons = (currentPage) => {
+        return new ActionRowBuilder().setComponents(
+            new ButtonBuilder()
+                .setCustomId("prev_page")
+                .setLabel("Previous")
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(currentPage === 0),
+            new ButtonBuilder()
+                .setCustomId("next_page")
+                .setLabel("Next")
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(currentPage === embeds.length - 1)
+        );
+    };
+
+    const message = await interaction.reply({
+        embeds: [embeds[0]],
+        components: [createButtons(0)],
+        fetchReply: true,
+    });
+
+    const collector = message.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 300_000,
+    });
+
+    let currentPage = 0;
+    collector.on("collect", async (buttonInteraction) => {
+        if (buttonInteraction.user.id !== interaction.interaction.user.id)
+            return;
+
+        await buttonInteraction.deferUpdate();
+        if (buttonInteraction.customId === "prev_page") {
+            currentPage--;
+        } else if (buttonInteraction.customId === "next_page") {
+            currentPage++;
+        }
+
+        await message.edit({
+            embeds: [embeds[currentPage]],
+            components: [createButtons(currentPage)],
+        });
+
+        collector.on("end", async () => {
+            const finalComponents = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId("prev_page_disabled")
+                    .setLabel("Previous")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true),
+                new ButtonBuilder()
+                    .setCustomId("next_page_disabled")
+                    .setLabel("Next")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+            );
+
+            await message.edit({
+                components: [finalComponents],
+            });
+        });
+    });
 }
 
 async function handleErrorResponse(interaction) {
@@ -137,11 +244,8 @@ async function handleErrorResponse(interaction) {
     );
 }
 
-async function getResponseBuffer(response) {
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    return buffer;
+async function getImageBuffer(response) {
+    return Buffer.from(response.image, "base64");
 }
 
 async function fetchResponse(options, filename, contentType) {
