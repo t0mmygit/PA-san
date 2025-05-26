@@ -10,7 +10,13 @@ const {
 } = require("discord.js");
 const { handleError } = require("@handlers/errorHandler");
 
-const APIHttpLocalRoute = "http://host.docker.internal:5000/preview";
+const environmentAPIUrl =
+    process.env.NODE_ENV === "production"
+        ? process.env.API_URL_PROD
+        : process.env.API_URL_DEV;
+
+const APIHttpLocalRoute = environmentAPIUrl + "preview";
+console.log("Command Endpoint: ", APIHttpLocalRoute);
 
 const algorithm_options = [
     { name: "Atkinson Dithering", value: "atkinson" },
