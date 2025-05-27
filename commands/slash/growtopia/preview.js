@@ -22,7 +22,7 @@ const algorithm_options = [
     { name: "Atkinson Dithering", value: "atkinson" },
     { name: "Nearest Neighbour Interpolation", value: "nearest_neighbor" },
 ];
-const resize_options = ["original", "strict", "width_only"];
+const resize_options = ["strict", "width_only"];
 
 module.exports = {
     data: new SlashCommandBuilder()
