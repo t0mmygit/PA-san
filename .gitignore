@@ -5,3 +5,5 @@
 database.sqlite
 README.md
 ecosystem.config.js
+logs/
+logs/*
