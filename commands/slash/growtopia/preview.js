@@ -7,6 +7,7 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ComponentType,
+    userMention,
 } = require("discord.js");
 const { handleError } = require("@handlers/errorHandler");
 
@@ -112,7 +113,7 @@ module.exports = {
                 APIResponse
             );
         } catch (error) {
-            await handleErrorResponse(interaction);
+            await handleErrorResponse(interaction, error);
             await handleError(error, __filename);
         }
     },
@@ -172,10 +173,7 @@ async function sendPaginatedPalette(
         const chunk = paletteLines.slice(i, i + linesPerPage);
         const embed = new EmbedBuilder()
             .setTitle(title)
-            .setDescription(chunk.join("\n"))
-            .setFooter({
-                text: `Page ${Math.ceil((i + linesPerPage) / linesPerPage)} of ${Math.ceil(paletteLines.length / linesPerPage)}`,
-            });
+            .setDescription(chunk.join("\n"));
         embeds.push(embed);
     }
     if (embeds.length === 0) return;
@@ -184,13 +182,20 @@ async function sendPaginatedPalette(
         return new ActionRowBuilder().setComponents(
             new ButtonBuilder()
                 .setCustomId("prev_page")
-                .setLabel("Previous")
-                .setStyle(ButtonStyle.Secondary)
+                .setLabel("Prev")
+                .setStyle(ButtonStyle.Primary)
                 .setDisabled(currentPage === 0),
+            new ButtonBuilder()
+                .setCustomId("page")
+                .setLabel(
+                    `Page ${1 + currentPage} / ${Math.ceil(paletteLines.length / linesPerPage)}`
+                )
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(false),
             new ButtonBuilder()
                 .setCustomId("next_page")
                 .setLabel("Next")
-                .setStyle(ButtonStyle.Secondary)
+                .setStyle(ButtonStyle.Primary)
                 .setDisabled(currentPage === embeds.length - 1)
         );
     };
@@ -244,9 +249,9 @@ async function sendPaginatedPalette(
     });
 }
 
-async function handleErrorResponse(interaction) {
+async function handleErrorResponse(interaction, error) {
     await interaction.editReply(
-        "This bot sucks. Unable fulfill your request, i blame prxer."
+        `${userMention(interaction.user.id)} ${error.message}`
     );
 }
 
@@ -271,9 +276,8 @@ async function fetchResponse(options, filename, contentType) {
         });
 
         if (!response.ok) {
-            throw new Error(
-                `API error (${response.status}): ${response.text()}`
-            );
+            const error = await response.json();
+            throw new Error(error.message);
         }
 
         return response;
