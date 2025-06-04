@@ -18,17 +18,16 @@ const { Channel, Guild } = require("@models");
 const { handleError } = require("@handlers/errorHandler");
 const channelSchema = require("@schemas/channel-settings");
 const appHasPermission = require("@middlewares/appHasPermission");
-const userHasPermission = require("@middlewares/userHasPermission");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("toggle-qualify-by-reaction")
         .setDescription(
             "Toggle to qualify message by reaction for this channel."
-        ),
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     middlewares: [
-        userHasPermission([PermissionFlagsBits.Administrator]),
         appHasPermission([
             PermissionFlagsBits.ManageMessages,
             PermissionFlagsBits.SendMessages,
@@ -38,19 +37,9 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
-
-        if (!isModerator(interaction.member)) {
-            await interaction.followUp({
-                content: "You do not have permission to use this command!",
-            });
-        }
         await qualifyByReaction(interaction);
     },
 };
-
-function isModerator(member) {
-    return member.permissions.has(PermissionFlagsBits.Administrator);
-}
 
 async function qualifyByReaction(interaction) {
     const [channel, channelSettings] = await getChannelSettings(interaction);
@@ -111,11 +100,6 @@ async function validateChannelSettings(settings) {
 }
 
 function buildConfirmationEmbed(settings) {
-    console.log(
-        "Settings showed for embed [normal/inverse]: ",
-        settings.allowQualifyByReaction,
-        !settings.allowQualifyByReaction
-    );
     const embed = new EmbedBuilder()
         .setTitle("Channel Settings Configuration")
         .setDescription(
