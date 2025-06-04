@@ -1,77 +1,90 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, bold } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    AttachmentBuilder,
+    bold,
+} = require("discord.js");
 const { COLOR_SECONDARY } = require("@/constant.js");
-const { addExtension } = require('@utils');
-const { handleError } = require('@handlers/errorHandler');
-const webhook = require('@handlers/webhookHandler');
-const worldRenderLink = 'https://s3.amazonaws.com/world.growtopiagame.com/';
+const { addExtension } = require("@utils");
+const { handleError } = require("@handlers/errorHandler");
+const webhook = require("@handlers/webhookHandler");
+const worldRenderLink = "https://s3.amazonaws.com/world.growtopiagame.com/";
 
 module.exports = {
-    name: 'render',
+    name: "render",
     data: new SlashCommandBuilder()
-        .setName('renderworld')
-        .setDescription('Render a growtopia world!')
-        .addStringOption(option => 
+        .setName("renderworld")
+        .setDescription("Render a growtopia world!")
+        .addStringOption((option) =>
             option
-                .setName('name')
-                .setDescription('Insert a world name.')
-                .setRequired(true))
-        .addStringOption(option =>
+                .setName("name")
+                .setDescription("Insert a world name.")
+                .setRequired(true)
+        )
+        .addStringOption((option) =>
             option
-                .setName('credit')
-                .setDescription('Insert the credit (who made the pixel art).')
-                .setRequired(false))
-        .addStringOption(option =>
+                .setName("credit")
+                .setDescription("Insert the credit (who made the pixel art).")
+                .setRequired(true)
+        )
+        .addStringOption((option) =>
             option
-                .setName('character')
-                .setDescription('Insert the character name (if any).')
-                .setRequired(false))
-        .addStringOption(option =>
+                .setName("character")
+                .setDescription("Insert the character name (if any).")
+                .setRequired(false)
+        )
+        .addStringOption((option) =>
             option
-                .setName('series')
-                .setDescription('Insert the series name (if any).')
-                .setRequired(false)),
+                .setName("series")
+                .setDescription("Insert the series name (if any).")
+                .setRequired(false)
+        ),
     async execute(interaction) {
         try {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply();
 
             const options = getInteractionOptions(interaction);
-            const fetchResponse = await fetch(worldRenderLink + addExtension(options.name, 'png'));
+            const fetchResponse = await fetch(
+                worldRenderLink + addExtension(options.name, "png")
+            );
 
             if (!fetchResponse.ok) {
                 await interaction.followUp({
-                    content: 'Render not found! Is this world rendered?',
+                    content: "Render not found! Is this world rendered?",
                 });
-                
+
                 return;
             }
             const imageUrl = await getImageUrl(fetchResponse, interaction);
             const embed = await createEmbed(interaction, options, imageUrl);
 
-            await interaction.channel.send({ embeds: [embed] });
-            await interaction.deleteReply();
+            await interaction.followUp({ embeds: [embed] });
         } catch (error) {
             await handleError(error, __filename);
         }
-    }
-}
+    },
+};
 
 function getInteractionOptions(interaction) {
     return {
-        name: interaction.options.getString('name').toLowerCase(),
-        character: interaction.options.getString('character'),
-        series: interaction.options.getString('series'),
-        credit: interaction.options.getString('credit')
+        name: interaction.options.getString("name").toLowerCase(),
+        character: interaction.options.getString("character"),
+        series: interaction.options.getString("series"),
+        credit: interaction.options.getString("credit"),
     };
 }
 
 async function getImageUrl(response, interaction) {
-    const attachment = await createAttachment(response, 'buffer');
-    attachment.setName(addExtension(interaction.user.id, 'png'));
+    const attachment = await createAttachment(response, "buffer");
+    attachment.setName(addExtension(interaction.user.id, "png"));
 
-    const message = await webhook.send({
-        content: `Requested by ${bold(interaction.user.username)} from ${bold(interaction.guild.name)}.`,
-        files: [attachment]
-    }, 'image-cache');
+    const message = await webhook.send(
+        {
+            content: `Requested by ${bold(interaction.user.username)} from ${bold(interaction.guild.name)}.`,
+            files: [attachment],
+        },
+        "image-cache"
+    );
 
     return message.attachments[0].proxy_url;
 }
@@ -81,58 +94,60 @@ async function createEmbed(interaction, options, image) {
 
     const embed = new EmbedBuilder()
         .setColor(COLOR_SECONDARY)
-        .setTitle('Growtopia World Render')
+        .setTitle("Growtopia World Render")
         .setFields({
-            name: 'World Name',
+            name: "World Name",
             value: name.toUpperCase(),
-            inline: true 
+            inline: true,
         })
         .setImage(image)
-        .setFooter({ 
+        .setFooter({
             text: `Requested by ${interaction.user.username}`,
-            iconURL: interaction.user.avatarURL()
+            iconURL: interaction.user.avatarURL(),
         });
 
     if (credit) {
         embed.addFields({
-            name: 'Credit',
+            name: "Credit",
             value: credit,
-            inline: true
+            inline: true,
         });
     }
 
     if (character) {
         embed.addFields({
-            name: 'Character',
+            name: "Character",
             value: character,
-            inline: true
+            inline: true,
         });
     }
 
     if (series) {
         embed.addFields({
-            name: 'Series',
+            name: "Series",
             value: series,
-            inline: true
+            inline: true,
         });
     }
 
     return embed;
 }
 
-async function createAttachment(response, type = 'buffer') {
+async function createAttachment(response, type = "buffer") {
     let imageBuffer;
 
-    if (type === 'buffer') {
+    if (type === "buffer") {
         const imageArrayBuffer = await response.arrayBuffer();
         imageBuffer = Buffer.from(imageArrayBuffer);
     }
 
-    if (type === 'chunk' || type === 'byob') {
+    if (type === "chunk" || type === "byob") {
         let reader;
-        const chuck = []; 
+        const chuck = [];
         // reader = response.body.getReader();
-        type === 'byob' ? reader = response.body.getReader({ mode: 'byob' }) : reader = response.body.getReader();
+        type === "byob"
+            ? (reader = response.body.getReader({ mode: "byob" }))
+            : (reader = response.body.getReader());
 
         while (true) {
             const { done, value } = await reader.read();
@@ -144,14 +159,4 @@ async function createAttachment(response, type = 'buffer') {
     }
 
     return new AttachmentBuilder(imageBuffer);
-}
-
-async function measurePerformance(fn, ...args) {
-    const startTime = performance.now();
-    const result = fn(...args);
-    const endTime = performance.now();
-    const elapsedTime = endTime - startTime;
-    console.log(`Elapsed time: ${elapsedTime}ms`);
-
-    return result instanceof Promise ? await result : result
 }
