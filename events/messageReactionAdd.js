@@ -1,5 +1,5 @@
 const { Events, PermissionFlagsBits, EmbedBuilder } = require("discord.js");
-const { bold, subtext, userMention } = require("@discordjs/formatters");
+const { bold, userMention } = require("@discordjs/formatters");
 const { Channel } = require("@models");
 const { handleError } = require("@handlers/errorHandler");
 const { COLOR_SUCCESS, COLOR_ERROR } = require("@/constant.js");
@@ -7,13 +7,41 @@ const channelSchema = require("@schemas/channel-settings");
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const EMOJI = {
+    QUALIFY: "✅",
+    NON_QUALIFY: "❌",
+    DELETE: "🗑️",
+};
+
+function isQualifiedReaction(emoji) {
+    return emoji === EMOJI.QUALIFY;
+}
+
+function isNonQualifiedReaction(emoji) {
+    return emoji === EMOJI.NON_QUALIFY;
+}
+
+function isDeleteReaction(emoji) {
+    return emoji === EMOJI.DELETE;
+}
+
 module.exports = (client) => {
     client.on(Events.MessageReactionAdd, async (reaction, user) => {
         if (user.bot) return;
 
         try {
-            await handleDeleteByReaction(client, reaction, user);
-            await handleQualifiedByReaction(reaction, user);
+            const reactionName = reaction.emoji.name;
+
+            if (isDeleteReaction(reactionName)) {
+                await handleDeleteByReaction(client, reaction, user);
+            }
+
+            if (
+                isQualifiedReaction(reactionName) ||
+                isNonQualifiedReaction(reactionName)
+            ) {
+                await handleQualifiedByReaction(reaction, user);
+            }
         } catch (error) {
             await handleError(error, __filename);
         }
@@ -21,121 +49,144 @@ module.exports = (client) => {
 };
 
 async function handleDeleteByReaction(client, reaction, user) {
-    if (!isDeleteReaction(reaction.emoji.name)) return;
-
     const canReact = await canDeleteByReaction(reaction.message.channelId);
     if (!canReact) {
-        await handleReactionError(reaction, user, "delete-by-reaction");
+        await sendReactionError(reaction, user, "deleteReactionDisabled");
 
         return;
     }
 
-    // Check if reacted message was requested by the same user
-    // Reason: The message can only be deleted by the user who originally requested it.
-    const interactionUserId = extractInteractionUserID(reaction.message);
-    if (!userIdMatchesAuthor(interactionUserId, user.id)) {
-        await handleReactionError(reaction, user, "user-requested-not-match");
+    const { message } = reaction;
+    if (!isAuthor(message.interactionMetadata.user.id, user.id)) {
+        await sendReactionError(reaction, user, "notAuthor");
+
+        return;
+    }
+
+    if (!message.deletable) {
+        const response = await message.reply({
+            content: constructUserResponse(user.id, "messageNotDeletable"),
+        });
+
+        await delay(3000);
+        await response.delete();
 
         return;
     }
 
     if (isReactionByBotAndSameClient(client, reaction)) {
-        const response = await reaction.message.reply({
-            content: constructUserResponse(user.id, "message-delete-request"),
+        const response = await message.reply({
+            content: constructUserResponse(user.id, "deleteRequest"),
         });
 
         await delay(3000);
-        await reaction.message.delete();
+        await message.delete();
 
         await delay(1000);
-        response.delete();
+        await response.delete();
     }
 }
 
 async function handleQualifiedByReaction(reaction, user) {
-    const reactionName = reaction.emoji.name;
-
-    if (!isValidQualifiedReaction(reactionName)) return;
-
     const isAdmin = await isAdministrator(reaction, user);
     if (!isAdmin) return;
 
     const canReact = await canQualifyByReaction(reaction.message.channelId);
     if (!canReact) {
-        await handleReactionError(reaction, user, "qualify-by-reaction");
+        await sendReactionError(reaction, user, "qualifyReactionDisabled");
 
         return;
     }
 
-    const message = reaction.message;
+    const { message } = reaction;
     if (!message.editable) {
-        console.log("Message is not editable by client user.");
+        const response = await message.reply({
+            content: constructUserResponse(user.id, "messageNotEditable"),
+        });
+
+        await delay(3000);
+        await response.delete();
+
+        return;
     }
 
-    const embed = EmbedBuilder.from(message.embeds[0]);
+    const reactionName = reaction.emoji.name;
+
+    const embeds = EmbedBuilder.from(message.embeds[0]);
     if (isQualifiedReaction(reactionName)) {
         await message.edit({
-            content: bold(`Qualified for ${getCurrentMonth()} Pixlr Contest!`),
-            embeds: [embed.setColor(COLOR_SUCCESS)],
+            content: bold(
+                `Qualified for ${getCurrentMonth(message)} Pixlr Contest!`
+            ),
+            embeds: [
+                setEmbedProperties(
+                    embeds,
+                    true,
+                    message.interactionMetadata.user
+                ),
+            ],
         });
     }
 
     if (isNonQualifiedReaction(reactionName)) {
         await message.edit({
             content: bold(
-                `Not Qualified for ${getCurrentMonth()} Pixlr Contest!`
+                `Not Qualified for ${getCurrentMonth(message)} Pixlr Contest!`
             ),
-            embeds: [embed.setColor(COLOR_ERROR)],
+            embeds: [setEmbedProperties(embeds, false, user)],
         });
     }
 
     await reaction.users.remove(user.id);
 }
 
-async function handleReactionError(reaction, user, content) {
+function setEmbedProperties(embeds, isQualified, user) {
+    const color = isQualified ? COLOR_SUCCESS : COLOR_ERROR;
+    const footerText = isQualified
+        ? `Approved by ${user.username}`
+        : `Requested by ${user.username}`;
+
+    return embeds
+        .setColor(color)
+        .setFooter({ text: footerText, iconURL: user.avatarURL() });
+}
+
+async function sendReactionError(reaction, user, reasonKey) {
     try {
         const response = await reaction.message.reply({
-            content: constructUserResponse(user.id, content),
+            content: constructUserResponse(user.id, reasonKey),
         });
         await delay(3000);
-        response.delete();
 
+        await response.delete();
         await reaction.users.remove(user);
     } catch (error) {
         await handleError(error, __filename);
     }
 }
 
+const PERMISSIONS = {
+    DELETE_BY_REACTION: "allowDeleteByReaction",
+    QUALIFY_BY_REACTION: "allowQualifyByReaction",
+};
+
 async function canDeleteByReaction(channelId) {
-    return await hasChannelPermission(channelId, "allowDeleteByReaction");
+    return await hasChannelPermission(
+        channelId,
+        PERMISSIONS.DELETE_BY_REACTION
+    );
 }
 
 async function canQualifyByReaction(channelId) {
-    return await hasChannelPermission(channelId, "allowQualifyByReaction");
+    return await hasChannelPermission(
+        channelId,
+        PERMISSIONS.QUALIFY_BY_REACTION
+    );
 }
 
-/* Handle 'is' condition */
 async function isAdministrator(reaction, user) {
-    // TODO: Check if user has permission or allowed to qualify (user role choose)
     const member = await reaction.message.guild.members.fetch(user.id);
-
     return member.permissions.has(PermissionFlagsBits.Administrator);
-}
-
-function isQualifiedReaction(emoji) {
-    return emoji === "✅";
-}
-
-function isNonQualifiedReaction(emoji) {
-    return emoji === "❌";
-}
-
-function isDeleteReaction(emoji) {
-    return emoji === "🗑️";
-}
-
-function isValidQualifiedReaction(emoji) {
-    return isQualifiedReaction(emoji) || isNonQualifiedReaction(emoji);
 }
 
 function isReactionByBotAndSameClient(client, reaction) {
@@ -145,7 +196,6 @@ function isReactionByBotAndSameClient(client, reaction) {
     );
 }
 
-/* Other functions */
 async function hasChannelPermission(channelId, object) {
     try {
         const channel = await Channel.findOne({
@@ -164,52 +214,29 @@ async function hasChannelPermission(channelId, object) {
     }
 }
 
-function getCurrentMonth() {
-    const date = new Date();
+function getCurrentMonth(message) {
+    const date = message.createdAt;
+    const options = {
+        month: "long",
+        timeZone: "America/New_York",
+    };
 
-    return date.toLocaleString("default", { month: "long" });
+    return date.toLocaleString("en-US", options);
 }
 
-function getContent(content) {
-    switch (content) {
-        case "qualify-by-reaction":
-            return "Qualify by reaction is not enabled!";
-
-        case "delete-by-reaction":
-            return "Delete by reaction is not enabled!";
-
-        case "user-requested-not-match":
-            return "You did not request for this render!";
-
-        case "message-delete-request":
-            return "You have requested to delete this message.";
-
-        default:
-            return "Something went wrong, please report to the developer.";
-    }
+function isAuthor(interactionUserId, userId) {
+    return interactionUserId == userId;
 }
 
-function userIdMatchesAuthor(extractedUserId, userId) {
-    if (!extractedUserId) return false;
+function constructUserResponse(id, responseKey) {
+    const reasons = {
+        qualifyReactionDisabled: "Qualify by reaction is disabled.",
+        deleteReactionDisabled: "Delete by reaction is disabled.",
+        deleteRequest: "You have requested to delete this message.",
+        notAuthor: "You can only delete messages you requested yourself.",
+        messageNotEditable: "This message is not editable.",
+        messageNotDeletable: "This message is not deletable",
+    };
 
-    return extractedUserId == userId;
-}
-
-function extractInteractionUserID(message) {
-    const embed = message.embeds[0];
-
-    if (!embed === null || !embed?.image === undefined) return null;
-
-    const imageUrl = embed.image.url;
-    const cleanUrl = imageUrl.split(".png?")[0];
-    const userId = cleanUrl.split("/").pop();
-
-    return userId;
-}
-
-function constructUserResponse(userId, content) {
-    const user = `${userMention(userId)}`;
-    const sub = `\n${subtext("This message will be deleted in 3 seconds.")}`;
-
-    return `${user} ${getContent(content)}${sub}`;
+    return `${userMention(id)} ${reasons[responseKey] ?? "Something went wrong!"}`;
 }
