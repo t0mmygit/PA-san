@@ -1,32 +1,34 @@
-const { Model } = require('sequelize');
+const { Model } = require("sequelize");
 
-module.exports = (sequelize, DataTypes) => { 
+module.exports = (sequelize, DataTypes) => {
     class User extends Model {
         static associate(models) {
-            User.hasOne(models.Inventory);
-        }
-
-        static getByDiscordId(discordId) {
-            return this.findOne({ where: { discord_id: discordId }});
+            User.hasMany(models.Palette, {
+                as: "owner",
+                foreignKey: "ownerId",
+            });
+            User.belongsToMany(models.Palette, { through: models.UserPalette });
         }
     }
 
-    User.init({
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
+    User.init(
+        {
+            id: {
+                type: DataTypes.INTEGER,
+                autoIncrement: true,
+                primaryKey: true,
+            },
+            discordId: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                unique: true,
+            },
         },
-        discord_id: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-    }, {
-        sequelize,
-        underscored: true,
-        modelName: 'User',
-    });
+        {
+            sequelize,
+            underscored: true,
+        }
+    );
 
     return User;
-}
+};
