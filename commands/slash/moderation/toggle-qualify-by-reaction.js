@@ -19,6 +19,7 @@ const { Channel, Guild } = require("@models");
 const { handleError } = require("@handlers/errorHandler");
 const channelSchema = require("@schemas/channel-settings");
 const appHasPermission = require("@middlewares/appHasPermission");
+const schema = require("@schemas/channel-settings");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -89,6 +90,7 @@ async function getChannelSettings(interaction) {
     const channel = await getChannel(interaction);
 
     // 'validateAsync' argument requires JavaScript object instead of JSON format.
+    console.info("Channel Settings: ", channel.settings);
     const parsedSettings = JSON.parse(channel.settings);
     const validatedSettings = await validateChannelSettings(parsedSettings);
     console.log("Validated Settings: ", validatedSettings);
