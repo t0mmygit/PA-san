@@ -7,6 +7,7 @@ const {
     ActionRowBuilder,
     EmbedBuilder,
     inlineCode,
+    MessageFlags,
 } = require("discord.js");
 const {
     COLOR_SECONDARY,
@@ -36,8 +37,13 @@ module.exports = {
     ],
 
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
-        await qualifyByReaction(interaction);
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+        try {
+            await qualifyByReaction(interaction);
+        } catch (error) {
+            await handleError(error, __filename);
+        }
     },
 };
 
@@ -54,17 +60,19 @@ async function qualifyByReaction(interaction) {
 }
 
 async function getChannel(interaction) {
+    const { guildId, channelId } = interaction;
+
     let channel = await Channel.findOne({
-        where: { discord_channel_id: interaction.channelId },
+        where: { discord_channel_Id: channelId },
     });
 
     if (!channel) {
         const [guild] = await Guild.findOrCreate({
-            where: { server_id: interaction.guildId },
+            where: { server_id: guildId },
         });
 
         channel = await guild.createChannel({
-            discord_channel_id: interaction.channelId,
+            discord_channel_id: channelId,
         });
     }
 
