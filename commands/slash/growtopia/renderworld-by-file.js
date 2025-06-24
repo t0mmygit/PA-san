@@ -2,13 +2,10 @@ const {
     SlashCommandBuilder,
     EmbedBuilder,
     AttachmentBuilder,
-    bold,
     PermissionFlagsBits,
 } = require("discord.js");
 const { COLOR_SECONDARY } = require("@/constant.js");
-const { addExtension } = require("@utils");
 const { handleError } = require("@handlers/errorHandler");
-const webhook = require("@handlers/webhookHandler");
 const appHasPermission = require("@middlewares/appHasPermission");
 
 module.exports = {
@@ -57,15 +54,14 @@ module.exports = {
         ),
     async execute(interaction) {
         try {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply();
 
             const options = getInteractionOptions(interaction);
             const imageURL = await fetchImageURL(interaction);
 
             const embed = await createEmbed(interaction, options, imageURL);
 
-            await interaction.channel.send({ embeds: [embed] });
-            await interaction.deleteReply();
+            await interaction.followUp({ embeds: [embed] });
         } catch (error) {
             await handleError(error, __filename);
         }
@@ -90,21 +86,6 @@ function getInteractionOptions(interaction) {
         series: interaction.options.getString("series"),
         credit: interaction.options.getString("credit"),
     };
-}
-
-async function getImageUrl(response, interaction) {
-    const attachment = await createAttachment(response, "buffer");
-    attachment.setName(addExtension(interaction.user.id, "png"));
-
-    const message = await webhook.send(
-        {
-            content: `Requested by ${bold(interaction.user.username)} from ${bold(interaction.guild.name)}.`,
-            files: [attachment],
-        },
-        "image-cache"
-    );
-
-    return message.attachments[0].proxy_url;
 }
 
 async function createEmbed(interaction, options, image) {
