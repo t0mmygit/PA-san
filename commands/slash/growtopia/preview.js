@@ -20,7 +20,8 @@ const {
     heading,
     HeadingLevel,
 } = require("discord.js");
-const { handleError } = require("@handlers/errorHandler");
+const { handleError } = require("@handlers/errorHandler.js");
+const { COLLECTOR_TIME } = require("@/constant,js");
 
 const environmentAPIUrl =
     process.env.NODE_ENV === "production"
@@ -140,7 +141,7 @@ module.exports = {
             const collector = response.createMessageComponentCollector({
                 filter: filter,
                 componentType: ComponentType.Button,
-                time: 30_000,
+                time: COLLECTOR_TIME,
             });
 
             await handleCollector(collector, options, APIResponse.palette, {
