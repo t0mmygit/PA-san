@@ -21,7 +21,7 @@ const {
     HeadingLevel,
 } = require("discord.js");
 const { handleError } = require("@handlers/errorHandler.js");
-const { COLLECTOR_TIME } = require("@/constant,js");
+const { COLLECTOR_TIME } = require("@/constant.js");
 
 const environmentAPIUrl =
     process.env.NODE_ENV === "production"
