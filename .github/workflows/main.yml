@@ -1,0 +1,47 @@
+name: PA-san
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-22.04
+    environment: workflows
+    steps:
+    - uses: actions/checkout@4
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+    - run: npm install --omit=dev --omit=optional
+    
+    - name: Deploy Files via SCP
+      uses: appleboy/scp-action@v1.0.0
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
+        source: "package.json"
+        target: ${{ vars.ROOT_DIR }}
+
+    - name: Reload via PM2
+      uses: appleboy/ssh-action@v1.2.2
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.SSH_PORT || '22' }}
+        script: |
+          source ~/.nvm/nvm.sh
+
+          cd ${{ vars.ROOT_DIR }}
+
+          pm2 startOrReload pm2.config.cjs
+          pm2 save
+          pm2 status
