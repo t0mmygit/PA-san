@@ -29,6 +29,15 @@ module.exports = (client) => {
     client.on(Events.MessageReactionAdd, async (reaction, user) => {
         if (user.bot) return;
 
+        const applicationId = process.env.DISCORD_CLIENT_ID;
+        console.log("Message: ", reaction.message);
+        if (!applicationId) {
+            throw new Error(
+                `Missing required environment variable: ${applicationId}`
+            );
+        }
+        if (reaction.message.applicationId !== applicationId) return;
+
         try {
             const reactionName = reaction.emoji.name;
 
@@ -118,13 +127,7 @@ async function handleQualifiedByReaction(reaction, user) {
             content: bold(
                 `Qualified for ${getCurrentMonth(message)} Pixlr Contest!`
             ),
-            embeds: [
-                setEmbedProperties(
-                    embeds,
-                    true,
-                    message.interactionMetadata.user
-                ),
-            ],
+            embeds: [setEmbedProperties(embeds, true, user)],
         });
     }
 
@@ -133,7 +136,13 @@ async function handleQualifiedByReaction(reaction, user) {
             content: bold(
                 `Not Qualified for ${getCurrentMonth(message)} Pixlr Contest!`
             ),
-            embeds: [setEmbedProperties(embeds, false, user)],
+            embeds: [
+                setEmbedProperties(
+                    embeds,
+                    false,
+                    message.interactionMetadata.user
+                ),
+            ],
         });
     }
 
@@ -141,6 +150,7 @@ async function handleQualifiedByReaction(reaction, user) {
 }
 
 function setEmbedProperties(embeds, isQualified, user) {
+    console.log("User: ", user);
     const color = isQualified ? COLOR_SUCCESS : COLOR_ERROR;
     const footerText = isQualified
         ? `Approved by ${user.username}`
